@@ -21,3 +21,4 @@ qdrant_storage/
 
 .ipynb_checkpoints/
 .DS_Store
+data/raw/
