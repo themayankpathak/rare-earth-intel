@@ -1,0 +1,13 @@
+printed_page,group,label,entity_scope,segment,material,chain_stage,metric,basis,unit,currency,price_basis,confidence
+44,Revenue,Rare earth concentrate,segment,Materials,total_REO,concentrate,revenue,contained_REO,USD,USD,not_applicable,high
+44,Revenue,NdPr oxide and metal,segment,Materials,NdPr,oxide,revenue,oxide_equivalent,USD,USD,not_applicable,low
+44,Revenue,Magnetic precursor products,segment,Magnetics,NdPr,metal,revenue,not_applicable,USD,USD,not_applicable,high
+44,Revenue,Intersegment eliminations,consolidated,,NdPr,oxide,intersegment_elimination,not_applicable,USD,USD,not_applicable,high
+44,Revenue,Total revenue,consolidated,,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high
+49,Rare earth concentrate,REO Production Volume (MTs),segment,Materials,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high
+49,Rare earth concentrate,REO Sales Volume (MTs),segment,Materials,total_REO,concentrate,sales_volume,contained_REO,tonnes,none,not_applicable,high
+49,Rare earth concentrate,Realized Price per REO MT,segment,Materials,total_REO,concentrate,avg_selling_price,contained_REO,USD_per_tonne,USD,basket,high
+49,Separated NdPr products,NdPr Production Volume (MTs),segment,Materials,NdPr,oxide,production_volume,gross_weight,tonnes,none,not_applicable,high
+49,Separated NdPr products,NdPr Sales Volume (MTs),segment,Materials,NdPr,oxide,sales_volume,oxide_equivalent,tonnes,none,not_applicable,low
+49,Revenue:,Price protection agreement income,segment,Materials,NdPr,oxide,non_revenue_income,not_applicable,USD,USD,not_applicable,high
+96,Materials segment,Total Materials segment revenue,segment,Materials,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high

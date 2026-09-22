@@ -27,3 +27,4 @@ data/raw/
 # ground truth is small and must be versioned
 !data/ground-truth/*.csv
 !data/ground-truth/*.xlsx
+!config/*.csv
