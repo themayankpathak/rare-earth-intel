@@ -4,7 +4,7 @@ A small, auditable pipeline that reads a rare earth company's annual report, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v1 shipped 30 Sep 2026 — one company, one filing (MP Materials FY2025 10-K).
+**Status:** v1 shipped 22 Sep 2026 — one company, one filing (MP Materials FY2025 10-K).
 Started August 2026. Build log: [`notes/devlog.md`](notes/devlog.md).
 
 ![The pairing trap](docs/price_trap.png)
