@@ -1,3 +1,9 @@
+> **Note (October 2026):** These are the original Week 1 design notes, kept as written. Some
+> details are out of date: page numbers refer to an earlier browser "Print to PDF" copy of the
+> 10-K (221 pages, no text layer); the file used now has 121 pages, with PDF page = printed page + 4.
+> The ground truth was drafted with AI assistance and machine-checked, not hand-verified.
+> For what was actually built and measured, see the [README](../README.md).
+
 # Rare Earth Intel
 
 A price and supply intelligence system for the NdFeB magnet value chain, built
