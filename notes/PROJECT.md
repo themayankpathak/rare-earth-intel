@@ -30,8 +30,8 @@ for all 20 rows. No extraction code written yet.
 
 ## Why this project
 
-I work in project management at N.A.N. MagneTech, a company building India's
-first mine-to-magnet NdFeB facility at Naidupeta. Part of my work there involved
+I work in project management in the NdFeB magnet supply chain. Part of my work
+there involved
 reconstructing NdFeB price series by grade across several years from Chinese
 sources and company annual reports, and cross-checking them to test whether
 reported figures held up.
@@ -582,8 +582,8 @@ reads as a demo.
 **Finish small rather than abandon large.** A four-week project with a chart and
 a measured accuracy number beats a twenty-week project with an empty table.
 
-**IP boundary.** Any work done at N.A.N. MagneTech using company data belongs to
-the company. This repository uses only publicly available documents. Internal
+**IP boundary.** Any work done for my employer using company data belongs to
+the employer. This repository uses only publicly available documents. Internal
 cost models, vendor coordination, customer agreements and internal planning
 material stay out entirely — not in a private repo that syncs, not in commit
 messages, not in the README. Confirm before publishing.
