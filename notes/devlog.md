@@ -73,3 +73,42 @@ All four elements mapped, not only the two in the ground truth, so the sum check
 `La` and `SEG+` added as material values.
 
 **Next:** Update CLAUDE.md handoff. Optional: FY2024 10-K run (self-checks only).
+
+## 2026-10-01 — Day 11 (continued): v2, three filings
+
+**Did:** Ran the pipeline on the FY2023 and FY2024 10-Ks as well as FY2025, with no page numbers in
+code. Tables are found by anchor phrases listed in `config/mp_tables.csv` (stop if a phrase matches
+more than one page); printed page numbers read from the page footer; year columns taken from the
+filing. One label map for the company (`config/mp_label_map.csv`), keyed on table, heading and label,
+replacing `mp_fy2025_label_map.csv`. Text cleaner treats `N/A` as "no value". New checks: NdPr $/kg
+price, rounding-aware price reconciliation, and agreement of every number across filings.
+Chart now covers FY2021–FY2025.
+
+**Result:** FY2025: 34 rows, identical to v1 output, 20/20 ground truth. FY2024: 27 rows. FY2023: 23
+rows. 209 checks pass, 0 fail, 1 expected exception. All 26 numbers reported in more than one filing
+agree. Pairing trap: +1.0%, +2.0%, +0.4%, +41.2%, +434.5% (FY2021–FY2025).
+
+**Found:**
+- `N/A` in a value column (FY2024 KPI table). The old parser skipped it and took the next number, so
+  FY2022 NdPr production became 1,094 t and the FY2022 NdPr price −$19/kg. Re-introducing the bug on
+  purpose showed the checks catch only the −$19 (range); the two volumes are plausible and have no
+  second source. Checks catch symptoms, not every error.
+- "Total revenue" under "Revenue:" means the whole company in the FY2023 10-K and the Materials
+  segment in FY2024. Heading + label is not enough; the table is part of the key.
+- The FY2023 10-K has a quarterly KPI table with the same labels as the annual one. Anchors pick the
+  annual table ("in whole units or dollars, except percentages"); the quarterly one lacks
+  "except percentages".
+- FY2021 Realized Price ($7,745/t) is non-GAAP; revenue ÷ volume gives $7,794/t. Recorded as a known
+  exception with its page reference (FY2023 10-K, printed p.38) rather than loosening the check.
+- Small volumes make exact price checks meaningless: FY2023 NdPr sales of "10" t could be 9.5–10.5 t.
+  Price checks now ask whether any unrounded values consistent with the printed ones fit.
+- FY2020–FY2022 filings differ in wording, columns and definitions. Also found there: FY2020 revenue
+  later split into "Product sales" + "Other sales", and the element distribution revised (Ce 49.1% →
+  50.2%). Not built; recorded in README limitations and roadmap.
+
+**Decision:** v2 scope is FY2023–FY2025. FY2020–FY2022 decided later (option C). row_ids count
+within each filing; rows are told apart by source_document. The chart takes each year from the
+latest filing that reports it, after the cross-filing check confirms they agree.
+
+**Next:** Update CLAUDE.md handoff. Decide on FY2020–FY2022. GitHub About box; resume bullet and
+LinkedIn post.
