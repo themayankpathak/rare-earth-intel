@@ -4,7 +4,8 @@ A small, auditable pipeline that reads a rare earth company's annual report, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v1 shipped 22 Sep 2026 — one company, one filing (MP Materials FY2025 10-K).
+**Status:** v1 shipped 30 Sep 2026 — one company, one filing (MP Materials FY2025 10-K).
+1 Oct 2026: printed p.29 parsed, all 20 ground-truth rows now found.
 Started August 2026. Build log: [`notes/devlog.md`](notes/devlog.md).
 
 ![The pairing trap](docs/price_trap.png)
@@ -42,7 +43,7 @@ It is one of several traps in this single filing:
 ```
 PDF ──► extract_rows.py ──► build_rows.py ──► score.py         (accuracy vs ground truth)
          read pages,          apply label map,  self_checker.py  (checks with no answer key)
-         parse tables         28-column rows    chart.py         (the figure above)
+         parse tables         28-column rows    plotter.py       (the figure above)
 ```
 
 1. **Extraction** — reads the report's tables line by line, tracking the scale header and section
@@ -53,7 +54,8 @@ PDF ──► extract_rows.py ──► build_rows.py ──► score.py        
 3. **Traceability** — every row carries its page, printed page and `raw_text`.
 4. **Measured accuracy** — output is scored field by field against a 20-row ground truth.
 5. **Automatic checks** — raw text found on the cited page, values in plausible ranges, stated price
-   reconciles with revenue ÷ volume, segment revenue bridges to the consolidated total.
+   reconciles with revenue ÷ volume, segment revenue bridges to the consolidated total, and the
+   concentrate's element shares add up to 100%.
 
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
@@ -62,11 +64,12 @@ only division happens in code.
 
 | Measure | Result |
 |---|---|
-| Ground-truth rows found | 18 of 20 (the 2 missing are on a page the parser does not read yet) |
-| Field accuracy on found rows | 13 of 13 fields correct on all 18 rows |
-| Automatic checks | 64 of 64 pass |
+| Ground-truth rows found | 20 of 20 |
+| Field accuracy on found rows | 13 of 13 fields correct on all 20 rows |
+| Automatic checks | 73 of 73 pass |
 | Price reconciliation | revenue ÷ volume matches stated price within 0.01% for FY2023–FY2025 |
 | Revenue bridge | 160,369 + 66,861 − 2,789 = 224,441 ($k), exact |
+| Concentrate composition | 50.2 + 32.3 + 15.7 + 1.8 = 100.0% (Ce, La, NdPr, SEG+) |
 
 **Read these honestly.** Values, scales, pages and raw text are extracted independently by code, so
 those scores are a real test. The classification fields (basis, chain stage, confidence…) come from
@@ -93,7 +96,7 @@ python scripts/extract_rows.py   # PDF -> data/interim/extracted_rows.csv
 python scripts/build_rows.py     # + label map -> data/processed/extracted_v2.csv
 python scripts/score.py          # accuracy vs ground truth
 python scripts/self_checker.py   # checks without an answer key
-python scripts/chart.py          # -> docs/price_trap.png
+python scripts/plotter.py        # -> docs/price_trap.png
 
 python scripts/page_looker.py 49 # print any printed page, useful for checking by eye
 ```
@@ -112,8 +115,10 @@ All page references assume this exact file (121 pages; PDF page = printed page +
 
 ## Known limitations
 
-- One company, one filing, three pages (printed pp.44, 49, 96). Printed p.29 (TREO distribution) is not parsed yet.
-- The parser assumes three year columns. Balance-sheet tables have two, and are point-in-time rather than annual.
+- One company, one filing, four pages (printed pp.29, 44, 49, 96).
+- Each page's column layout is declared in `extract_rows.py`, not detected: three year columns by
+  default, none for the p.29 composition table. Balance-sheet tables (two columns, point-in-time)
+  are not handled yet.
 - "In thousands, except per share data" is applied to per-share rows too (out of scope here; range checks would catch it).
 - A heading carries over until the next heading, so a line can inherit the wrong section name. The label map keys on page and label as well, so this does not affect results — but a section name is a hint, not a meaning.
 

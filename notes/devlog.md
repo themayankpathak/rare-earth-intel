@@ -50,3 +50,26 @@ The pairing trap (total revenue / concentrate volume) is 0.4% off in FY2023 and 
 **Decision:** Ship first; learn the Python properly before interviews. Code written with AI assistance.
 
 **Next:** Buffer days. Stretch: p.29 parsing, parse_quantity for Chinese units.
+
+## 2026-10-01 — Day 11
+
+**Did:** Parsed printed p.29 (Estimated distribution of TREO content). Text cleaner keeps a
+trailing "%" in raw_text, as printed. Extractor takes per-page year columns and starting scale;
+p.29 has neither, so it is read with period `not_applicable` and scale 1. Build step leaves
+fiscal-year fields blank when the period is not a fiscal year. Label map: four p.29 lines
+(Ce, La, NdPr, SEG+). New self-check: element shares sum to 100%.
+
+**Result:** 20 of 20 ground-truth rows found, 13/13 fields correct on all 20. 73 of 73 checks pass.
+EX01–EX30 unchanged; p.29 adds EX31–EX34.
+
+**Found:** Adding p.29 with no scale header gave its rows an empty scale_factor, and one empty
+value turned the whole column from 1000 into 1000.0. Scoring reads everything as text, so
+scale_factor dropped to 0/18 on rows that were never touched. Fixed by giving p.29 a real scale.
+Also: the new composition check failed (0 elements, sum 0%) when the label map had not been
+saved — it caught a missing-data problem on its first run.
+
+**Decision:** p.29 is read last so existing row_ids stay stable (schema: never renumber).
+All four elements mapped, not only the two in the ground truth, so the sum check works.
+`La` and `SEG+` added as material values.
+
+**Next:** Update CLAUDE.md handoff. Optional: FY2024 10-K run (self-checks only).
