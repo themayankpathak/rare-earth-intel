@@ -4,18 +4,18 @@ import re
 NUMBER = re.compile(r"^\(?\d{1,3}(,\d{3})*(\.\d+)?\)?$")
 # A footnote marker stuck to the end of a label, like "SEG+(1)".
 FOOTNOTE = re.compile(r"\(\d\)$")
-# Dashes the 10-K prints for "nothing here".
-DASHES = {"—", "–", "-"}
+# What the 10-K prints for "no value in this column": dashes, and "N/A" (e.g. NdPr volumes before 2023).
+EMPTY = {"—", "–", "-", "N/A"}
 
 
 def is_value(token):
-    # True if this piece of text is a number or a dash.
-    return bool(NUMBER.match(token)) or token in DASHES
+    # True if this piece of text is a number or an empty placeholder.
+    return bool(NUMBER.match(token)) or token in EMPTY
 
 
 def to_number(token):
-    # Turn printed text into a number: "41,992" -> 41992.0, "(2,789)" -> -2789.0, "—" -> None.
-    if token in DASHES:
+    # Turn printed text into a number: "41,992" -> 41992.0, "(2,789)" -> -2789.0, "—" or "N/A" -> None.
+    if token in EMPTY:
         return None
     negative = token.startswith("(")
     digits = token.strip("()").replace(",", "")
@@ -66,6 +66,8 @@ if __name__ == "__main__":
         "(in thousands, except percentages) 2025 2024 2023 2024 2023 2024 2023",
         "Neodymium-Praseodymium 15.7 %",
         "SEG+(1) 1.8 %",
+        "NdPr Production Volume (MTs) 1,294 200 N/A 1,094 N/A 547 % N/A",
+        "NdPr Realized Price per KG $ 51 $ 70 N/A $ (19) N/A (27)% N/A",
     ]
     for line in tests:
         print(parse_line(line))
