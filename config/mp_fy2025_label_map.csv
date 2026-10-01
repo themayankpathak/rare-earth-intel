@@ -1,4 +1,8 @@
 printed_page,group,label,entity_scope,segment,material,chain_stage,metric,basis,unit,currency,price_basis,confidence
+29,Element,Cerium,site,,Ce,concentrate,composition_pct,contained_REO,percent,none,not_applicable,high
+29,Element,Lanthanum,site,,La,concentrate,composition_pct,contained_REO,percent,none,not_applicable,high
+29,Element,Neodymium-Praseodymium,site,,NdPr,concentrate,composition_pct,contained_REO,percent,none,not_applicable,high
+29,Element,SEG+,site,,SEG+,concentrate,composition_pct,contained_REO,percent,none,not_applicable,high
 44,Revenue,Rare earth concentrate,segment,Materials,total_REO,concentrate,revenue,contained_REO,USD,USD,not_applicable,high
 44,Revenue,NdPr oxide and metal,segment,Materials,NdPr,oxide,revenue,oxide_equivalent,USD,USD,not_applicable,low
 44,Revenue,Magnetic precursor products,segment,Magnetics,NdPr,metal,revenue,not_applicable,USD,USD,not_applicable,high

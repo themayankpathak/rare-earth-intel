@@ -13,6 +13,7 @@ RANGES = {
     "revenue": (100_000, 10_000_000_000),      # USD
     "non_revenue_income": (0, 10_000_000_000), # USD
     "intersegment_elimination": (-10_000_000_000, 0),
+    "composition_pct": (0, 100),               # percentage points (15.7, not 0.157)
 }
 
 rows = pd.read_csv(EXTRACTED)
@@ -36,10 +37,11 @@ with pdfplumber.open(PDF_PATH) as pdf:
                f"{row['row_id']} '{row['raw_text']}' found on printed p.{row['printed_page']}")
 
 # Check 2: every value is inside the plausible range for its metric.
+# ",.10g" prints 41,992,000 as a whole number but keeps 15.7 as 15.7.
 for _, row in rows.iterrows():
     low, high = RANGES[row["metric"]]
     report(low <= row["value_base"] <= high,
-           f"{row['row_id']} {row['metric']} = {row['value_base']:,.0f} within range")
+           f"{row['row_id']} {row['metric']} = {row['value_base']:,.10g} within range")
 
 
 def pick(metric, material, period, segment="Materials"):
@@ -67,5 +69,13 @@ total = rows[(rows["entity_scope"] == "consolidated") & (rows["metric"] == "reve
              & (rows["period"] == "FY2025")]["value_base"].iloc[0]
 report(materials + magnetics + elimination == total,
        f"FY2025 revenue bridge {materials + magnetics + elimination:,.0f} = {total:,.0f}")
+
+# Check 5: the element shares of the concentrate (printed p.29) must add up to 100%.
+# Needs all four elements: a missing or misread one makes the sum wrong.
+# The tolerance (0.05) only absorbs rounding in the printed one-decimal figures.
+shares = rows[rows["metric"] == "composition_pct"]
+total_share = shares["value_base"].sum()
+report(len(shares) == 4 and abs(total_share - 100) < 0.05,
+       f"p.29 concentrate composition: {len(shares)} elements sum to {total_share:.1f}%")
 
 print(f"\n{failures} failures")
