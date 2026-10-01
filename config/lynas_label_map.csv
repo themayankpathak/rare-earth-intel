@@ -1,0 +1,13 @@
+table,group,label,entity_scope,segment,material,chain_stage,metric,basis,unit,currency,price_basis,confidence,scale,notes
+sales,*,Sales volume (REOt),consolidated,,total_REO,oxide,sales_volume,contained_REO,tonnes,none,not_applicable,high,1,
+sales,*,Sales revenue (A$m),consolidated,,total_REO,oxide,revenue,contained_REO,AUD,AUD,not_applicable,high,1000000,
+sales,*,Cash receipts from customers (A$m),consolidated,,total_REO,oxide,cash_receipts,not_applicable,AUD,AUD,not_applicable,high,1000000,Cash received in the year: not revenue
+sales,*,Average selling price (A$/kg),consolidated,,total_REO,oxide,avg_selling_price,contained_REO,AUD_per_kg,AUD,basket,high,1,Across all rare earth products sold: not an NdPr price
+production,*,Ready for sale production volume (REO) total (t),consolidated,,total_REO,oxide,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+production,*,Ready for sale production volume total (REOt),consolidated,,total_REO,oxide,production_volume,contained_REO,tonnes,none,not_applicable,high,1,Label wording FY2019-FY2024
+production,*,Ready for sale production volume NdPr (t),consolidated,,NdPr,oxide,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+production,*,Ready for sale production volume NdPr (REOt),consolidated,,NdPr,oxide,production_volume,contained_REO,tonnes,none,not_applicable,high,1,Label wording FY2019-FY2024
+five_year,*,Revenue ($‘000),consolidated,,total_REO,oxide,revenue,contained_REO,AUD,AUD,not_applicable,high,1000,
+five_year,*,Total REO production (tonnes per annum),consolidated,,total_REO,oxide,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+five_year,*,Sales volume (REO tonnes per annum),consolidated,,total_REO,oxide,sales_volume,contained_REO,tonnes,none,not_applicable,high,1,
+five_year,*,Average selling price (per REO tonne),consolidated,,total_REO,oxide,avg_selling_price,contained_REO,AUD_per_kg,AUD,basket,high,1,Label says per REO tonne but the values are A$ per kg (revenue / volume confirms)

@@ -112,3 +112,36 @@ latest filing that reports it, after the cross-filing check confirms they agree.
 
 **Next:** Update CLAUDE.md handoff. Decide on FY2020–FY2022. GitHub About box; resume bullet and
 LinkedIn post.
+## 2026-10-01 — Day 11 (continued): v4 and v5, second company (Lynas)
+
+**Did:** Company became an input (`extract_rows.py lynas FY2026`); `config/companies.csv` holds each
+company's entity, file prefix and year end. Year reader handles `FY26`, oldest-first years,
+`30 June 2017 …` dates and any number of columns; the cleaner takes as many values as there are year
+columns. Scale and notes can come from the label map (Lynas prints "(A$m)" in labels). Footer page
+number read from the last two lines. Price checks work out rounding from how each number is printed;
+the cross-check compares every place a number is printed (other reports and other tables), and the
+company is part of each number's identity. New status OPEN for real, unexplained differences.
+Lynas files renamed `lynas_financial_FY2019`–`FY2026` (all are the full-year Appendix 4E / financial
+report; the glossy annual reports FY2019–24 kept as `lynas_annual_*` for reference).
+
+**Result:** MP unchanged (identical output, 20/20). Lynas 44/44/44/44/29/29/32/24 rows (FY2026→FY2019),
+covering FY2013–FY2026. 1,004 checks pass, 0 fail, 8 expected, 14 open. 99 numbers printed in more
+than one place; all agree except MP's two explained composition revisions.
+
+**Found:**
+- The cross-check caught a parser bug: Lynas FY2021–24 five-year headers read `30 June 2019 30 June
+  2020 …` on one line; starting with "30", it parsed as numbers, so every five-year value was filed
+  under the wrong year. Each value was plausible alone; five copies of the same year disagreed.
+- Lynas five-year table labels the price "(per REO tonne)" but the values are A$ per kg. Mapped with
+  the true unit and a note; the printed number is untouched; the price check confirms per kg.
+- "Cash receipts from customers" sits next to "Sales revenue": mapped as its own metric.
+- Lynas FY25 revenue includes A$13.8m of price adjustments on earlier provisional sales.
+- OPEN: FY25 price (50.6 vs 50.73; revenue note checked, does not explain it); FY17/FY18 prices ~2%
+  above revenue ÷ volume (lead: "net sales revenue", unconfirmed, older reports not collected);
+  one-cent gaps in the two-decimal five-year prices (FY2019, FY2022).
+
+**Decision:** never change a printed number; explained differences are EXPECTED with a page;
+unexplained ones stay OPEN. Lynas series = financial reports (unbroken FY2019–FY2026).
+
+**Next:** Neo Performance Materials, then JL Mag English reports, then a Chinese feasibility test.
+GitHub About box; resume bullet.

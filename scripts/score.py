@@ -1,7 +1,7 @@
 import pandas as pd
 
 GROUND_TRUTH = "data/ground-truth/ground_truth.csv"
-EXTRACTED = "data/processed/extracted_FY2025.csv"
+EXTRACTED = "data/processed/mp_extracted_FY2025.csv"
 KEY = ["entity_scope", "segment", "material", "metric", "period"]
 FIELDS = [
     "value_base", "scale_factor", "raw_text", "printed_page", "pdf_page",

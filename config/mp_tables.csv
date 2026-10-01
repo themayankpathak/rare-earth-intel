@@ -1,5 +1,5 @@
-table,anchor,year_columns,start_scale
-revenue,Rare earth concentrate revenue consists,3,
-kpis,"(in whole units or dollars, except percentages)",3,
-note_segment,Total Materials segment revenue,3,
-composition,Estimated Distribution,0,1
+table,anchor,years,start_scale
+revenue,Rare earth concentrate revenue consists | summarizes our results of operations,header,
+kpis,"(in whole units or dollars, except percentages)",header,
+note_segment,Total Materials segment revenue,header,
+composition,Estimated Distribution,none,1

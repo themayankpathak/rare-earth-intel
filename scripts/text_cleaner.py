@@ -23,8 +23,9 @@ def to_number(token):
     return -number if negative else number
 
 
-def parse_line(line):
-    # Split one line into its label and up to three values, each value kept as (printed text, number).
+def parse_line(line, max_values=3):
+    # Split one line into its label and up to max_values values (one per year column),
+    # each value kept as (printed text, number).
     tokens = line.split()
 
     # Everything before the first "$" or number is the label.
@@ -42,8 +43,8 @@ def parse_line(line):
         if token == "%" and values:
             raw, number = values[-1]
             values[-1] = (raw + " %", number)
-        # Three values collected (the three year columns): stop reading this line.
-        elif len(values) == 3:
+        # One value per year column collected: stop reading this line (the rest are change columns).
+        elif len(values) == max_values:
             break
         # A "$" belongs to the number right after it.
         elif token == "$":
@@ -71,3 +72,5 @@ if __name__ == "__main__":
     ]
     for line in tests:
         print(parse_line(line))
+    # Lynas: four year columns, then a percentage change.
+    print(parse_line("Sales revenue (A$m) 977.9 556.5 463.3 739.3 75.7%", max_values=4))

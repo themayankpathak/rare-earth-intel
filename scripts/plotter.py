@@ -4,7 +4,7 @@ import matplotlib
 matplotlib.use("Agg")  # draw to a file, not a window (the Codespace has no screen)
 import matplotlib.pyplot as plt
 
-FILES = sorted(glob.glob("data/processed/extracted_FY*.csv"))
+FILES = sorted(glob.glob("data/processed/mp_extracted_FY*.csv"))  # this chart is about MP
 OUTPUT = "docs/price_trap.png"
 
 # All filings in one table. For a year reported in several filings, keep the latest filing's value
@@ -36,7 +36,7 @@ for year in sorted(p for p in rows["period"].unique() if p.startswith("FY")):
           f"overstated {naive[-1] / correct[-1] - 1:+.1%}")
 
 # Draw the two lines.
-fig, ax = plt.subplots(figsize=(9, 5))
+fig, ax = plt.subplots(figsize=(10, 5))
 ax.plot(years, naive, marker="o", color="#c0392b",
         label="Wrong: total company revenue / concentrate volume")
 ax.plot(years, correct, marker="o", color="#2c3e50",
@@ -56,9 +56,9 @@ ax.set_ylim(0, max(naive) * 1.15)
 ax.legend(loc="upper left", fontsize=9)
 ax.grid(axis="y", alpha=0.3)
 fig.text(0.01, 0.01,
-         "Source: MP Materials 10-Ks FY2023-FY2025 (each year from the latest filing that reports it). "
+         "Source: MP Materials 10-Ks FY2020-FY2025 (each year from the latest filing that reports it). "
          "Basket price across the full REO mix, not an NdPr price.\n"
-         "Right = GAAP revenue / volume. For FY2021 MP's stated Realized Price ($7,745) uses non-GAAP Total Value Realized.",
+         "Right = GAAP revenue / volume. For FY2019-FY2021 MP's stated Realized Price uses non-GAAP Total Value Realized.",
          fontsize=7, color="gray")
 fig.tight_layout(rect=(0, 0.05, 1, 1))
 fig.savefig(OUTPUT, dpi=150)
