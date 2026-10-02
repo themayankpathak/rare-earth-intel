@@ -4,13 +4,15 @@ A small, auditable pipeline that reads rare earth companies' annual reports, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v6, October 2026. Three companies, eighteen reports, one label map per company:
+**Status:** v7, October 2026. Three companies and one government source, twenty-six documents, one label
+map per source:
 
-| Company | What it is | Reports | Years covered |
+| Source | What it is | Documents | Years covered |
 |---|---|---|---|
 | MP Materials | US miner and refiner (10-K) | FY2020–FY2025 | FY2019–FY2025 |
 | Lynas Rare Earths | Australian miner and separator (Appendix 4E / financial report) | FY2019–FY2026 | FY2013–FY2026 |
 | Neo Performance Materials | Canadian processor: magnet powders, chemicals, rare metals (MD&A) | FY2022–FY2025 | FY2020–FY2025 |
+| U.S. Geological Survey | Government statistics: Mineral Commodity Summaries, rare earths chapter | 2019–2026 editions | 2014–2025 |
 
 v1 (one MP filing) shipped 30 Sep 2026. Started August 2026. Build log: [`notes/devlog.md`](notes/devlog.md).
 
@@ -35,11 +37,17 @@ Neo sells: by segment, revenue per tonne is about $19,000 for rare earth chemica
 $34,000 for magnet powders and magnets, and **$461,000 for rare metals** such as hafnium. The tonnes
 of very different products have been added together.
 
+The government source adds an independent check. USGS publishes US mine production every year, and MP
+is the main US producer. MP's own figure falls within USGS's rounding **in every year from 2019 to
+2025**: two sources that never see each other's spreadsheets, agreeing. USGS also revises itself:
+Australia's 2024 production is 13,000 tonnes in the 2025 edition and 29,000 in the 2026 edition. The
+pipeline knows a revised *estimate* is expected; a revised *reported* figure is a question.
+
 This is obvious to an expert who reads the right page, and invisible to a pipeline, a quick
 spreadsheet estimate, or an AI tool that doesn't. The project is about making it impossible for a
 machine to make it.
 
-These are some of the traps found in the eighteen reports:
+These are some of the traps found in the twenty-six documents:
 
 | Trap | Example |
 |---|---|
@@ -68,6 +76,12 @@ These are some of the traps found in the eighteen reports:
 | An estimate that was revised | MP: the concentrate's cerium share is 49.1% in the FY2020 10-K, 50.2% from FY2021 |
 | Years in a different order | Lynas FY2019 lists `FY16 FY17 FY18 FY19`; later reports newest first; five-year tables oldest first |
 | A label split over two lines | Neo FY2023: `Sales volume` on one line, `(tonnes) . . . 12,970` on the next |
+| A footnote glued to a number | USGS: "China 11105,000" is footnote 11 + 105,000; Australia's reserves read as 135,700,000 are 5,700,000 + footnote 13 |
+| A dash that means zero | USGS legend: "— Zero"; in company reports a dash means no value |
+| Codes that hold a column | USGS prints NA, W (withheld), XX, E (net exporter); skip them and later numbers move into the wrong year |
+| Estimates revised later | USGS Australia 2024: 13,000 t (2025 edition) → 29,000 t (2026 edition); most production figures are marked "e" |
+| A restated price | USGS neodymium oxide 2021: $49/kg in the 2022–23 editions, $98/kg from 2024 (open question, below) |
+| A file that isn't what its name says | the downloaded "2021" USGS chapter was byte-for-byte the 2020 edition (same SHA-256) |
 
 ## What it does
 
@@ -81,9 +95,9 @@ Everything company-specific is configuration, not code:
 
 | File | Says |
 |---|---|
-| [`config/companies.csv`](config/companies.csv) | each company's name, file prefix and year end (31 Dec for MP and Neo, 30 June for Lynas) |
+| [`config/companies.csv`](config/companies.csv) | each source's name, file prefix, year end (31 Dec, or 30 June for Lynas) and reading rules: document type, whether to remove superscripts, whether a dash means zero, how precisely numbers are printed, and which USGS country to compare it with |
 | `config/<company>_tables.csv` | where to look: each table and the anchor phrases that find its page |
-| `config/<company>_label_map.csv` | what each line means: scope, segment, material, chain stage, metric, basis, unit, and optionally scale and a note |
+| `config/<company>_label_map.csv` | what each line means: scope, segment, material, chain stage, metric, basis, unit, and optionally scale, a note, and the entity (each country in the USGS world table) |
 | `config/<company>_scope_changes.csv` | optional: when a segment sold or closed a facility, with the page that says so |
 
 1. **Finding the tables.** The extractor searches the whole PDF for each table's anchor. An anchor can
@@ -96,6 +110,9 @@ Everything company-specific is configuration, not code:
    the header says which comes first and only the full-year block is taken; change columns are
    skipped; a line of `Q4 Q3 Q2 Q1` labels means no full-year values until the next header. The
    page's header is read before its rows, because a page's text is not always in reading order.
+   For USGS, characters printed smaller than the text (footnote numbers, "e" for estimate) are removed
+   before reading, so a footnote can never change a number; the "e" marks are kept as estimate flags,
+   whether on one value, on a year column, or on a whole table's title.
 3. **Meaning.** One label map per company, keyed on table, heading and label, matched ignoring capital
    letters and dot leaders. A map line can name a heading or match the label under any heading (`*`);
    a line that names a heading wins. Guards stop the build if one line gets two meanings or a number
@@ -109,8 +126,10 @@ Everything company-specific is configuration, not code:
    revenue ÷ volume agrees with every stated price, allowing for how finely each number is printed;
    segment revenues plus eliminations equal consolidated revenue; segment volumes add up to at least
    the consolidated volume (Neo reports segments before intercompany eliminations); element shares
-   add up to 100%; and **every number printed in more than one place (another report, or another
-   table of the same report) agrees**.
+   add up to 100%; **every number printed in more than one place (another report, another edition, or
+   another table of the same report) agrees**, allowing for how finely each copy is printed (USGS
+   rounds to significant digits); and **a company's own production agrees with the USGS figure for
+   its country** (MP and the United States).
 
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
@@ -121,16 +140,18 @@ difference that is not explained stays open.
 
 ## Results
 
-| Company | Reports | Rows | Ground truth |
+| Source | Documents | Rows | Ground truth |
 |---|---|---|---|
 | MP Materials | 6 | 135 | FY2025: 20 of 20 found, 13 of 13 fields correct on all 20 |
 | Lynas Rare Earths | 8 | 290 | none (checks only) |
 | Neo Performance Materials | 4 | 116 | none (checks only) |
+| U.S. Geological Survey | 8 editions | 336 | none (checks only) |
 
 | Check | Result |
 |---|---|
-| All automatic checks | **1,291 pass, 0 fail**, 8 expected (explained), 14 open (unexplained) |
-| Numbers printed in more than one place | 134: all agree except 2 explained (MP's revised composition) |
+| All automatic checks | **2,041 pass, 0 fail**, 46 expected (explained), 15 open (unexplained) |
+| Numbers printed in more than one place | 244: all agree, except MP's revised composition (2, explained), USGS estimates revised by later editions (38, expected) and one restated USGS price (open) |
+| MP vs USGS, US production | **7 of 7 years agree** within USGS rounding (2019–2025) |
 | Revenue bridges | MP FY2025: 160,369 + 66,861 − 2,789 = 224,441 ($k). Neo: exact in every year FY2020–FY2025 |
 | Segment volumes vs consolidated (Neo) | segments exceed consolidated by 40–226 t a year, as expected before eliminations |
 | Concentrate composition (MP) | adds up to 100.0% in all six filings |
@@ -142,6 +163,8 @@ Each check prints PASS, FAIL, or the status of a recorded exception:
     tariff rebates), so it does not equal GAAP revenue ÷ volume (FY2021 10-K, printed pp.34 and 45).
   - MP's estimated element distribution was revised between the FY2020 10-K (printed p.13) and the
     FY2021 10-K (printed p.26): cerium 49.1% → 50.2%, lanthanum 33.4% → 32.3%.
+  - USGS figures marked "e" (estimate) that a later edition revised: expected, as long as the figures
+    that are not estimates agree with each other. Anything else is still a failure.
 - **OPEN** (a real difference nobody has explained yet; logged, visible, never counted as a pass):
   - **Lynas FY2025**: stated A$50.6/kg against A$50.73/kg from revenue ÷ volume, in two reports and
     two tables. Already ruled out: the revenue note (FY2025 report, printed p.78). Revenue from
@@ -151,8 +174,11 @@ Each check prints PASS, FAIL, or the status of a recorded exception:
     revenue", so the older price may be on gross sales. The FY2017–FY2018 reports are not collected.
   - **Lynas five-year table, FY2019 and FY2022**: two-decimal prices about one cent off
     (18.97 vs 18.98; 60.27 vs 60.28). The one-decimal prices in the sales table reconcile.
+  - **USGS neodymium oxide price, 2021**: $49/kg in the 2022 and 2023 editions, $98/kg from the 2024
+    edition on, while 2020 is unchanged. The price source footnote changed in the same edition (Argus
+    Metals International → Argus Non-Ferrous Metals), but that alone does not explain one restated year.
 
-The open count (14) counts check lines, not questions: there are four open questions, each printed in
+The open count (15) counts check lines, not questions: there are five open questions, some printed in
 several tables. Neo states no prices, so it has no price checks; its numbers are guarded by the
 bridges, the volume check and cross-checks between reports.
 
@@ -183,12 +209,15 @@ bridges, the volume check and cross-checks between reports.
 | Neo FY2022 / FY2023 | 3 MD&As each |
 | Neo FY2024 | 2 MD&As |
 | Neo FY2025 | 1 MD&A |
+| USGS US production 2014 / 2015 / 2016 / 2017 | 1 / 2 / 3 / 4 editions |
+| USGS US production 2018–2021 | 5 editions each |
+| USGS US production 2022 / 2023 / 2024 / 2025 | 4 / 3 / 2 / 1 editions |
 
 **Read these honestly.** Values, scales, pages and raw text are extracted independently by code, so
 those scores are a real test. The classification fields (basis, chain stage, confidence…) come from
 the label map, written with the same judgement as the ground truth; for those, the score shows the
-map is applied consistently, not that classification was learned. Lynas and Neo have no ground truth;
-they are guarded by the checks alone.
+map is applied consistently, not that classification was learned. Lynas, Neo and USGS have no ground
+truth; they are guarded by the checks alone.
 
 The checks catch symptoms, not every error. To test them, an earlier `N/A` bug was put back on
 purpose: it produces three wrong MP FY2022 values, and the checks flag one of them (a −$19/kg price,
@@ -221,6 +250,9 @@ done
 for f in FY2025 FY2024 FY2023 FY2022; do
   python scripts/extract_rows.py neo $f && python scripts/build_rows.py neo $f
 done
+for e in ED2026 ED2025 ED2024 ED2023 ED2022 ED2021 ED2020 ED2019; do
+  python scripts/extract_rows.py usgs $e && python scripts/build_rows.py usgs $e
+done
 python scripts/score.py                      # MP FY2025 accuracy vs ground truth
 python scripts/self_checker.py               # checks on every report, and across reports
 python scripts/plotter.py                    # -> docs/price_trap.png
@@ -252,6 +284,14 @@ minutes each for MP's FY2021, FY2023 and FY2024 PDFs (400+ pages, exhibits inclu
 | `neo_mda_FY2024.pdf` | same, year to 31 Dec 2024 | 31 | `f5a902931d667bdeb195679ab937976fbb2ed3580438300e818ca2ba01ad1560` |
 | `neo_mda_FY2023.pdf` | same, year to 31 Dec 2023 | 54 | `5300fe29623a95a303020529e019e2946b14b0c925e6218516e2687b172d498a` |
 | `neo_mda_FY2022.pdf` | same, year to 31 Dec 2022 | 52 | `e4fa9624f321e80f6e62fef1fcbf65d7683cb4e15ff405892ebbf81d33e90908` |
+| `usgs_mcs_ED2026.pdf` | USGS Mineral Commodity Summaries 2026, Rare Earths (pubs.usgs.gov) | 2 | `0116a192336fec41c38d8e11dad553bb7703308c1fbd1f97dc14b75c7e7d9900` |
+| `usgs_mcs_ED2025.pdf` | same, 2025 edition | 2 | `87e73bd28fd9d87b99a2ea58d104d6e41467e3488c181c61161e0abf22c6c7a1` |
+| `usgs_mcs_ED2024.pdf` | same, 2024 edition | 2 | `1cc18fa276ff10cc05fdbe3ece4d003fafec58dd796582b36e7f2adfc15fc06b` |
+| `usgs_mcs_ED2023.pdf` | same, 2023 edition | 2 | `090ddc08c971df16abd231b0908819b9563e33a2c7ca661b7d62521fe0011f01` |
+| `usgs_mcs_ED2022.pdf` | same, 2022 edition | 2 | `47f04ff41b0693378bcf34c850a97ba1765a8c088ae5ac578caa702d791837db` |
+| `usgs_mcs_ED2021.pdf` | same, 2021 edition | 2 | `5a20d7eb502057b63f3dd49d8a97261dbb1057835fc97d296f0df26aeaaa1623` |
+| `usgs_mcs_ED2020.pdf` | same, 2020 edition | 2 | `4eaef1e03de767f748093b07fd8ba4d2f4906a18bfb92e83048ae951037844a6` |
+| `usgs_mcs_ED2019.pdf` | same, 2019 edition | 2 | `536772cc03112f8434389008e771495717f32ca62b34b06cb0f8094514fd4898` |
 
 Lynas Corporation Ltd became Lynas Rare Earths Ltd between the FY2020 and FY2021 reports (same ACN
 009 066 648): one company, one identity in the data. The glossy Lynas annual reports for FY2019–FY2024
@@ -260,8 +300,14 @@ no text layer and different page numbers; this project started with one.
 
 ## Known limitations
 
-- Three companies, English-language reports. The parser still assumes English labels, parentheses for
-  negatives, and that a table's years appear on a header line.
+- Three companies and one government source, all in English. The parser still assumes English labels,
+  parentheses for negatives, and that a table's years appear on a header line.
+- Only MP is compared with USGS. Lynas is not compared with USGS's Australia figure: Lynas reports
+  years to 30 June and the REO in its finished products, USGS reports calendar years and mine output.
+- USGS's US production figure includes producers other than Mountain Pass (monazite in the
+  southeastern US; Utah compounds per the 2026 edition); the agreement with MP is within rounding.
+- USGS's heavy rare earths chapter (2026) is collected but not parsed yet. USGS prices are extracted
+  and cross-checked between editions, not compared with company prices (different products and bases).
 - The chart covers MP only.
 - Neo states no prices, so its numbers have no price check; Neo FY2020 has revenue only.
 - MP's composition table is treated as having no period; the FY2020 → FY2021 revision is recorded as
@@ -274,13 +320,17 @@ no text layer and different page numbers; this project started with one.
 
 ## Roadmap
 
-- **JL Mag** (English Hong Kong reports): next, and a bridge to Chinese-language sources.
+- **Unit tests and a GitHub check** (CI) running them on every push: next.
+- **Web app**: a data explorer with page citations, then questions answered from the table with
+  citations (no arithmetic by the language model).
+- **JL Mag** (English Hong Kong reports): volumes are only in sentences, and production switches from
+  finished magnets to blanks in 2024; needs a sentence-level extractor. A bridge to Chinese sources.
 - **Close the open questions**: the Lynas FY2025 and FY2017–FY2018 price gaps (quarterly reports,
   older annual reports).
 - **Older Neo MD&As** (FY2019–FY2021): a second and third source for FY2020–FY2021.
 - **Chinese sources**: the schema already carries `language` and `scale_factor` (for 万 and 亿);
   next is a feasibility test on one report and a `parse_quantity(text, lang)` with tests.
-- **Cross-source reconciliation**: company figures against USGS, IEA and trade data.
+- **More cross-source reconciliation**: IEA and trade data; USGS heavy rare earths chapter.
 - **Structured data where it exists**: GAAP figures are published by the SEC in machine-readable
   form (XBRL) and could check the parsed values. Operating figures (volumes, realized prices)
   generally are not, which is why the documents are parsed.
@@ -292,8 +342,8 @@ no text layer and different page numbers; this project started with one.
 ## Repository layout
 
 ```
-config/            companies list; per company: tables (where to look), label map (what it means),
-                   scope changes (optional)
+config/            source list with reading rules; per source: tables (where to look), label map
+                   (what it means), scope changes (optional)
 data/ground-truth/ 20 checked rows: workbook + CSV (tracked)
 data/raw/          source PDFs (ignored; see "Run it")
 data/interim/      parser output per report (ignored, regenerated)
