@@ -136,6 +136,33 @@ for path in FILES:
             bridge = materials + magnetics + elimination.iloc[0]
             report(bridge == total.iloc[0], f"{period} revenue bridge {bridge:,.0f} = {total.iloc[0]:,.0f}")
 
+    # Check 4b: segment revenues + corporate / eliminations = consolidated revenue, where a report gives
+    # at least two segment totals (Neo). Each segment is counted once even if two tables print it.
+    for period in sorted(rows["period"].unique()):
+        in_year = rows[rows["period"] == period]
+        segments = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "revenue")
+                           & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
+        elimination = in_year[in_year["metric"] == "intersegment_elimination"]["value_base"]
+        total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "revenue")]["value_base"]
+        if len(segments) >= 2 and len(elimination) and len(total):
+            bridge = segments["value_base"].sum() + elimination.iloc[0]
+            report(bridge == total.iloc[0], f"{period} segment revenue bridge: {len(segments)} segments "
+                   f"{segments['value_base'].sum():,.0f} + eliminations {elimination.iloc[0]:,.0f} = {total.iloc[0]:,.0f}")
+
+    # Check 4c: segment sales volumes add up to at least the consolidated volume. Not equal: Neo reports its
+    # segments before intercompany eliminations (C&O sells to Magnequench), so tonnes sold inside the group
+    # are in the segments but not in the consolidated figure (Neo FY2025 MD&A printed p.20).
+    for period in sorted(rows["period"].unique()):
+        in_year = rows[rows["period"] == period]
+        volumes = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "sales_volume")
+                          & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
+        total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "sales_volume")]["value_base"]
+        if len(volumes) >= 2 and len(total):
+            segment_sum = volumes["value_base"].sum()
+            report(segment_sum >= total.iloc[0], f"{period} segment volumes {segment_sum:,.0f} t >= consolidated "
+                   f"{total.iloc[0]:,.0f} t (difference {segment_sum - total.iloc[0]:,.0f} t, consistent with segments "
+                   f"reported before intercompany eliminations)")
+
     # Check 5: the element shares of the concentrate must add up to 100%.
     # At least four elements (FY2020 lists Nd and Pr separately, so five); a missing one breaks the sum.
     # The tolerance (0.05) only absorbs rounding in the printed one-decimal figures.

@@ -1,3 +1,4 @@
+import os
 import sys
 import pandas as pd
 
@@ -70,6 +71,17 @@ rows["is_comparative"] = (is_year & (rows["period"] != FILING)).map({True: "TRUE
 
 # The number in base units: printed value times its scale.
 rows["value_base"] = rows["value_reported"] * rows["scale_factor"]
+
+# Scope changes: when a segment sold or closed a facility, its numbers from that year on describe a
+# different business. Add the recorded note to every affected row (config/<company>_scope_changes.csv,
+# optional). The numbers are unchanged; the note travels with them.
+SCOPE_CHANGES = f"config/{COMPANY}_scope_changes.csv"
+if os.path.exists(SCOPE_CHANGES):
+    for _, change in pd.read_csv(SCOPE_CHANGES, dtype=str).iterrows():
+        affected = (rows["segment"] == change["segment"]) & is_year & \
+                   (rows["period"].str[2:].astype(int, errors="ignore") >= int(change["from_period"][2:]))
+        rows.loc[affected, "notes"] = rows.loc[affected, "notes"].fillna("").str.cat(
+            [change["note"]] * affected.sum(), sep="; ").str.lstrip("; ")
 
 # Guard: within one table, each kind of number (identity) must appear only once.
 # (The same number in two tables of one report is allowed: the checks compare them.)

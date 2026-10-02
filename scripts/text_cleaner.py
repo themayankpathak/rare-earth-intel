@@ -29,10 +29,12 @@ def parse_line(line, max_values=3):
     tokens = line.split()
 
     # Everything before the first "$" or number is the label.
+    # Dot leaders ("Revenue . . . . $ 640,298", Neo 2022-2024) are not part of the label.
     label_words = []
     i = 0
     while i < len(tokens) and tokens[i] != "$" and not is_value(tokens[i]):
-        label_words.append(tokens[i])
+        if set(tokens[i]) != {"."}:
+            label_words.append(tokens[i])
         i += 1
     label = FOOTNOTE.sub("", " ".join(label_words)).strip()
 
@@ -74,3 +76,5 @@ if __name__ == "__main__":
         print(parse_line(line))
     # Lynas: four year columns, then a percentage change.
     print(parse_line("Sales revenue (A$m) 977.9 556.5 463.3 739.3 75.7%", max_values=4))
+    # Neo 2022: dot leaders, then year, year, $ change, % change, quarter, quarter...
+    print(parse_line("Sales volume (tonnes) . . . . . 13,118 15,103 (1,985) (13.1%) 3,193 3,311 (118) (3.6%)", max_values=2))

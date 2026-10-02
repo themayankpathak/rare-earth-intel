@@ -1,0 +1,14 @@
+table,group,label,entity_scope,segment,material,chain_stage,metric,basis,unit,currency,price_basis,confidence,scale,notes
+highlights,Revenue,Magnequench,segment,Magnequench,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+highlights,Revenue,C&O,segment,C&O,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+highlights,Revenue,Rare Metals,segment,Rare Metals,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+highlights,Revenue,Corporate / Eliminations,consolidated,,not_applicable,not_applicable,intersegment_elimination,not_applicable,USD,USD,not_applicable,high,1000,Corporate items and intersegment eliminations in one line
+highlights,Revenue,Consolidated Revenue,consolidated,,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+consolidated,*,Sales volume (tonnes),consolidated,,not_applicable,not_applicable,sales_volume,gross_weight,tonnes,none,not_applicable,low,1,"Physical tonnes of every product sold, from cerium chemicals to hafnium: not a basis for a price"
+consolidated,Sales volume,(tonnes),consolidated,,not_applicable,not_applicable,sales_volume,gross_weight,tonnes,none,not_applicable,low,1,"Label split over two lines in the FY2023 MD&A ('Sales volume' / '(tonnes)'). Physical tonnes of every product sold: not a basis for a price"
+magnequench,*,Sales volume (tonnes),segment,Magnequench,not_applicable,not_applicable,sales_volume,gross_weight,tonnes,none,not_applicable,low,1,Tonnes of magnetic powders and magnets: a product mix
+magnequench,*,Revenue,segment,Magnequench,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+co,*,Sales volume (tonnes),segment,C&O,not_applicable,not_applicable,sales_volume,gross_weight,tonnes,none,not_applicable,low,1,"Tonnes of rare earth chemicals, oxides and catalysts: a product mix"
+co,*,Revenue,segment,C&O,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
+rare_metals,*,Sales volume (tonnes),segment,Rare Metals,not_applicable,not_applicable,sales_volume,gross_weight,tonnes,none,not_applicable,low,1,"Tonnes of hafnium, tantalum, niobium, gallium and others: a product mix"
+rare_metals,*,Revenue,segment,Rare Metals,not_applicable,not_applicable,revenue,not_applicable,USD,USD,not_applicable,high,1000,
