@@ -145,3 +145,45 @@ unexplained ones stay OPEN. Lynas series = financial reports (unbroken FY2019–
 
 **Next:** Neo Performance Materials, then JL Mag English reports, then a Chinese feasibility test.
 GitHub About box; resume bullet.
+
+## 2026-10-01 — Day 11 (continued): v6, third company (Neo)
+
+**Did:** Added Neo Performance Materials from its FY2022–FY2025 MD&As (files renamed `neo_mda_FY2022`–
+`FY2025`). Five tables per MD&A: selected financial highlights (segment revenue, corporate /
+eliminations, consolidated revenue), the reconciliation table (consolidated sales volume) and one
+table per segment (Magnequench, C&O, Rare Metals: volume and revenue). Parser changes: anchors can
+require two phrases on one page (`10.1 Magnequench && Sales volume (tonnes)`); every run of years in a
+header is read, and a `Three Months Ended … Year Ended` line decides which block is the full year;
+percentage columns are dropped and the quarter block skipped; the page's header is read before its
+rows; a line of `Q4 Q3 Q2 Q1` labels stops annual values until the next header; dot leaders are
+dropped from labels; a page number in the middle of a footer is read. New config
+`neo_scope_changes.csv` adds notes to affected rows (ZAMR closure FY2024, JAMR/ZAMR sale FY2025,
+Quapaw sale FY2025), each with its page. New checks: segment revenues + corporate / eliminations =
+consolidated revenue; segment volumes >= consolidated volume.
+
+**Result:** Neo 29 rows per MD&A (116), covering FY2020–FY2025. MP and Lynas output identical to v5 in
+all 14 files; MP 20/20. 1,291 checks pass, 0 fail, 8 expected, 14 open (unchanged; all MP and Lynas).
+Neo revenue bridge exact in every year; all 35 Neo numbers printed in more than one place agree.
+134 multi-place numbers across the three companies.
+
+**Found:**
+- Neo's consolidated sales volume adds up tonnes of different products. FY2025: revenue ÷ 13,216 t =
+  $36k/t, while segments are about $19k/t (C&O), $34k/t (Magnequench) and $461k/t (Rare Metals). Every
+  Neo volume row is marked confidence low with a note: a product mix, not a basis for a price.
+- 2024–25 MD&As put the quarter before the full year; 2022–23 put the year first. Reading "first
+  numbers = years" would give FY2025 volume 2,988 t (Q4) instead of 13,216 t.
+- In the FY2024 reconciliation page the volume row comes out of the PDF before its own header.
+- The FY2025 Rare Metals page also holds the start of the quarterly results table (`2025 2024` above
+  `Q4 Q3 Q2 Q1 …`): its quarters were read as years. The duplicate guard stopped the build.
+- Segment volumes exceed consolidated by 40–226 t a year: segments are reported before intercompany
+  eliminations (FY2025 MD&A printed p.20). Checked as an inequality, not an equality.
+- FY2023 splits a label over two lines (`Sales volume` / `(tonnes)`): one specific map line.
+- Lynas is one company renamed (Lynas Corporation → Lynas Rare Earths, same ACN), handled as one
+  identity. The opposite case matters more: same name, different business (Neo's plant sales; MP's
+  move into refining and magnets). Neo's pre-2017 history is Molycorp's: a different company.
+
+**Decision:** Neo kept at FY2022–FY2025 MD&As for now; older MD&As (FY2019–21) on the roadmap. Next
+source: JL Mag's English Hong Kong reports.
+
+**Next:** Commit v6. Inspect JL Mag. Optional: a Neo chart (revenue per tonne by segment vs the
+consolidated "average").

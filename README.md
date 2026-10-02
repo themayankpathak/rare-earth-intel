@@ -4,10 +4,15 @@ A small, auditable pipeline that reads rare earth companies' annual reports, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v5, October 2026. Two companies, fourteen annual reports:
-MP Materials (FY2020–FY2025 10-Ks, covering FY2019–FY2025) and Lynas Rare Earths (FY2019–FY2026
-financial reports, covering FY2013–FY2026). One label map per company. v1 (one filing) shipped
-30 Sep 2026. Started August 2026. Build log: [`notes/devlog.md`](notes/devlog.md).
+**Status:** v6, October 2026. Three companies, eighteen reports, one label map per company:
+
+| Company | What it is | Reports | Years covered |
+|---|---|---|---|
+| MP Materials | US miner and refiner (10-K) | FY2020–FY2025 | FY2019–FY2025 |
+| Lynas Rare Earths | Australian miner and separator (Appendix 4E / financial report) | FY2019–FY2026 | FY2013–FY2026 |
+| Neo Performance Materials | Canadian processor: magnet powders, chemicals, rare metals (MD&A) | FY2022–FY2025 | FY2020–FY2025 |
+
+v1 (one MP filing) shipped 30 Sep 2026. Started August 2026. Build log: [`notes/devlog.md`](notes/devlog.md).
 
 ![The pairing trap](docs/price_trap.png)
 
@@ -24,21 +29,34 @@ FY2023, then **41% in FY2024 and 435% in FY2025**. For five years the shortcut l
 business changes (MP began refining its own concentrate, then selling magnet materials) and the same
 calculation becomes badly wrong, with nothing in the numbers to warn you.
 
+Neo shows the same trap in another form. It reports a consolidated sales volume of 13,216 tonnes for
+FY2025. Divide revenue by it and you get about **$36,000 per tonne**, a number that describes nothing
+Neo sells: by segment, revenue per tonne is about $19,000 for rare earth chemicals and oxides,
+$34,000 for magnet powders and magnets, and **$461,000 for rare metals** such as hafnium. The tonnes
+of very different products have been added together.
+
 This is obvious to an expert who reads the right page, and invisible to a pipeline, a quick
 spreadsheet estimate, or an AI tool that doesn't. The project is about making it impossible for a
 machine to make it.
 
-It is one of many traps in these reports:
+These are some of the traps found in the eighteen reports:
 
 | Trap | Example |
 |---|---|
 | Wrong pairing | MP: total revenue ÷ concentrate volume (the chart) |
+| Tonnes of different things added together | Neo: 13,216 t of chemicals, magnet materials and hafnium; revenue ÷ tonnes = $36k/t, true of no product |
 | Tonnes that aren't physical tonnes | MP: 8,922 t is contained rare earth content, not the weight shipped |
 | A basket price that isn't an NdPr price | MP $4,707/t and Lynas A$80.7/kg average the whole product mix |
 | A unit label that is wrong in the source | Lynas five-year table: "Average selling price (per REO tonne) 80.68" is A$ per **kg** (revenue ÷ volume confirms) |
 | Cash that isn't revenue | Lynas prints "Cash receipts from customers A$887.3m" right above "Sales revenue A$977.9m" |
 | Revenue that isn't this year's sales | Lynas FY25 revenue includes A$13.8m of price adjustments on earlier, provisionally priced sales |
 | Money outside revenue | MP: Price Protection Agreement income ($51.0m) is booked outside revenue |
+| Quarter and year side by side | Neo 2024–25 print the quarter first: take the first numbers as the year and FY2025 volume is 2,988 t (Q4), not 13,216 t |
+| Quarter columns under a year header | Neo FY2025: `2025 2024` above `Q4 Q3 Q2 Q1 Q4 Q3 Q2 Q1`; read as years, Q3 2025 becomes "FY2024" |
+| A header that comes after its rows | Neo FY2024: in the page's text the volume row comes before its own column header |
+| A header that looks like data | Lynas: `30 June 2019 30 June 2020 …` on one line starts with a number, so it parses as values |
+| Segments that don't add up, by design | Neo: segment volumes are reported before intercompany eliminations, so they exceed the consolidated total |
+| Same name, different business | Neo C&O sold two Chinese separation plants in 2025: FY2025 C&O is a smaller business than FY2024 |
 | Two scales on one page | MP: "in whole units" and "in thousands" on the same page of the FY2025 10-K |
 | Scale inside the label | Lynas: "(A$m)", "($'000)" and "(t)" in the row labels, not in a header |
 | Modelled volumes | MP: NdPr sales tonnes convert metal to oxide at an assumed ratio (1.20 in FY2024) |
@@ -46,11 +64,10 @@ It is one of many traps in these reports:
 | Same heading, different scope | MP: "Total revenue" under "Revenue:" is the whole company in FY2023, one segment in FY2024 |
 | Same label, different meaning over time | MP: "Product sales" is the company total in the FY2020 10-K, one product line after "Other sales" was split out |
 | A placeholder read as a number | MP FY2024 prints `1,294 200 N/A 1,094`; skip the `N/A` and FY2022 gets 1,094 t, a change figure |
-| Same labels, different periods | MP: each 10-K also has a quarterly KPI table with labels identical to the annual one |
 | A stated price that isn't revenue ÷ volume | MP FY2019–FY2021 use non-GAAP "Total Value Realized"; Lynas FY2017, FY2018 and FY2025 don't reconcile (open questions, below) |
 | An estimate that was revised | MP: the concentrate's cerium share is 49.1% in the FY2020 10-K, 50.2% from FY2021 |
 | Years in a different order | Lynas FY2019 lists `FY16 FY17 FY18 FY19`; later reports newest first; five-year tables oldest first |
-| A header that looks like data | Lynas: `30 June 2019 30 June 2020 …` on one line starts with a number, so it parses as a row of values. This one fooled the pipeline (see Results) |
+| A label split over two lines | Neo FY2023: `Sales volume` on one line, `(tonnes) . . . 12,970` on the next |
 
 ## What it does
 
@@ -64,29 +81,36 @@ Everything company-specific is configuration, not code:
 
 | File | Says |
 |---|---|
-| [`config/companies.csv`](config/companies.csv) | each company's name, file prefix and year end (31 Dec for MP, 30 June for Lynas) |
-| `config/<company>_tables.csv` | where to look: each table and one or more anchor phrases that find its page |
+| [`config/companies.csv`](config/companies.csv) | each company's name, file prefix and year end (31 Dec for MP and Neo, 30 June for Lynas) |
+| `config/<company>_tables.csv` | where to look: each table and the anchor phrases that find its page |
 | `config/<company>_label_map.csv` | what each line means: scope, segment, material, chain stage, metric, basis, unit, and optionally scale and a note |
+| `config/<company>_scope_changes.csv` | optional: when a segment sold or closed a facility, with the page that says so |
 
-1. **Finding the tables.** The extractor searches the whole PDF for each table's anchor phrase,
-   trying older wording if the newer is missing. If a phrase matches more than one page it stops
-   instead of guessing. No page numbers in code.
+1. **Finding the tables.** The extractor searches the whole PDF for each table's anchor. An anchor can
+   list older wording to try if the newer is missing (`A | B`), or require two phrases on one page
+   (`10.1 Magnequench && Sales volume (tonnes)`, to skip the table of contents). If an anchor matches
+   more than one page the run stops instead of guessing. No page numbers in code.
 2. **Extraction.** Reads each table line by line and keeps the exact printed text of every number.
    Year columns are read from the table's own header (`2025 2024 2023`, `FY26 FY25`, oldest-first
-   `2022 … 2026`, `30 June 2017 30 June 2018 …`), so two-, three-, four-, five- and eight-year tables
-   all work. Scale comes from the page (`in thousands`) or from the label map (`(A$m)`).
-3. **Meaning.** One label map per company, keyed on table, heading and label, matched ignoring
-   capital letters. A map line can name a heading or match the label under any heading (`*`); a line
-   that names a heading wins. When a company rewords a label, a line is added, not a new map. Guards
-   stop the build if one line gets two meanings or a number appears twice in one table.
-4. **Traceability.** Every row carries its source report, PDF page, printed page and `raw_text`.
+   `2022 … 2026`, `30 June 2017 30 June 2018 …`). Where quarter and full-year blocks sit side by side,
+   the header says which comes first and only the full-year block is taken; change columns are
+   skipped; a line of `Q4 Q3 Q2 Q1` labels means no full-year values until the next header. The
+   page's header is read before its rows, because a page's text is not always in reading order.
+3. **Meaning.** One label map per company, keyed on table, heading and label, matched ignoring capital
+   letters and dot leaders. A map line can name a heading or match the label under any heading (`*`);
+   a line that names a heading wins. Guards stop the build if one line gets two meanings or a number
+   appears twice in one table.
+4. **Context.** Every row carries its source report, PDF page, printed page and `raw_text`. Scope
+   changes are added as notes to every affected row: Neo's FY2025 C&O rows say the segment sold two
+   plants that year, with the page.
 5. **Measured accuracy.** The MP FY2025 output is scored field by field against a 20-row ground truth.
 6. **Automatic checks**, with no answer key, on every report:
    raw text found on the cited page; values in a plausible range for their metric and unit;
    revenue ÷ volume agrees with every stated price, allowing for how finely each number is printed;
-   segment revenue bridges to the consolidated total; element shares add up to 100%; and
-   **every number printed in more than one place (another report, or another table of the same report)
-   agrees**.
+   segment revenues plus eliminations equal consolidated revenue; segment volumes add up to at least
+   the consolidated volume (Neo reports segments before intercompany eliminations); element shares
+   add up to 100%; and **every number printed in more than one place (another report, or another
+   table of the same report) agrees**.
 
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
@@ -97,24 +121,25 @@ difference that is not explained stays open.
 
 ## Results
 
-| Company | Reports | Rows | Years covered | Ground truth |
-|---|---|---|---|---|
-| MP Materials | FY2020–FY2025 10-Ks | 135 | FY2019–FY2025 | FY2025: 20 of 20 found, 13 of 13 fields correct on all 20 |
-| Lynas Rare Earths | FY2019–FY2026 financial reports | 290 | FY2013–FY2026 | none (checks only) |
+| Company | Reports | Rows | Ground truth |
+|---|---|---|---|
+| MP Materials | 6 | 135 | FY2025: 20 of 20 found, 13 of 13 fields correct on all 20 |
+| Lynas Rare Earths | 8 | 290 | none (checks only) |
+| Neo Performance Materials | 4 | 116 | none (checks only) |
 
 | Check | Result |
 |---|---|
-| All automatic checks | **1,004 pass, 0 fail**, 8 expected (explained), 14 open (unexplained) |
-| Numbers printed in more than one place | 99: all agree except 2 explained (MP's revised composition) |
-| Revenue bridge (MP FY2025) | 160,369 + 66,861 − 2,789 = 224,441 ($k), exact |
+| All automatic checks | **1,291 pass, 0 fail**, 8 expected (explained), 14 open (unexplained) |
+| Numbers printed in more than one place | 134: all agree except 2 explained (MP's revised composition) |
+| Revenue bridges | MP FY2025: 160,369 + 66,861 − 2,789 = 224,441 ($k). Neo: exact in every year FY2020–FY2025 |
+| Segment volumes vs consolidated (Neo) | segments exceed consolidated by 40–226 t a year, as expected before eliminations |
 | Concentrate composition (MP) | adds up to 100.0% in all six filings |
 
 Each check prints PASS, FAIL, or the status of a recorded exception:
 
 - **EXPECTED** (explained, with the page where the explanation is printed):
   - MP's Realized Price for FY2019–FY2021 is based on non-GAAP "Total Value Realized" (adjusted for
-    tariff rebates), so it does not equal GAAP revenue ÷ volume
-    (FY2021 10-K, printed pp.34 and 45).
+    tariff rebates), so it does not equal GAAP revenue ÷ volume (FY2021 10-K, printed pp.34 and 45).
   - MP's estimated element distribution was revised between the FY2020 10-K (printed p.13) and the
     FY2021 10-K (printed p.26): cerium 49.1% → 50.2%, lanthanum 33.4% → 32.3%.
 - **OPEN** (a real difference nobody has explained yet; logged, visible, never counted as a pass):
@@ -128,14 +153,16 @@ Each check prints PASS, FAIL, or the status of a recorded exception:
     (18.97 vs 18.98; 60.27 vs 60.28). The one-decimal prices in the sales table reconcile.
 
 The open count (14) counts check lines, not questions: there are four open questions, each printed in
-several tables.
+several tables. Neo states no prices, so it has no price checks; its numbers are guarded by the
+bridges, the volume check and cross-checks between reports.
 
-**The cross-check caught a real bug.** In the Lynas FY2021–FY2024 reports the five-year table header
-is `30 June 2019 30 June 2020 …` on one line. Because it starts with "30", the parser first read it
-as a row of numbers, not a header, and every five-year value was filed under the wrong year (FY2019's
-revenue as "FY2023"). Each number was plausible on its own; no range check could see it. But the same
-year's revenue is printed in five places across four reports, and the copies disagreed. Fourteen
-failures appeared at once; the fix was one line.
+**The checks caught the pipeline's own mistakes.**
+- Lynas FY2021–FY2024: the five-year header `30 June 2019 30 June 2020 …` parsed as numbers, so every
+  five-year value was filed under the wrong year. Each was plausible alone; five copies of the same
+  year's revenue disagreed. Fourteen failures appeared at once; the fix was one line.
+- Neo FY2025: the Rare Metals page also holds the start of the quarterly results table, and its
+  quarters were read as years. "Revenue" then appeared twice in one table and the build stopped
+  instead of saving a wrong number.
 
 **How far each year is cross-checked:**
 
@@ -151,12 +178,17 @@ failures appeared at once; the fix was one line.
 | Lynas FY2019–FY2022 | 5 reports each |
 | Lynas FY2023 / FY2024 / FY2025 | 4 / 3 / 2 reports |
 | Lynas FY2026 | 1 report |
+| Neo FY2020 | 1 MD&A (revenue only) |
+| Neo FY2021 | 2 MD&As (volumes: 1) |
+| Neo FY2022 / FY2023 | 3 MD&As each |
+| Neo FY2024 | 2 MD&As |
+| Neo FY2025 | 1 MD&A |
 
 **Read these honestly.** Values, scales, pages and raw text are extracted independently by code, so
 those scores are a real test. The classification fields (basis, chain stage, confidence…) come from
 the label map, written with the same judgement as the ground truth; for those, the score shows the
-map is applied consistently, not that classification was learned. Lynas has no ground truth; it is
-guarded by the checks alone.
+map is applied consistently, not that classification was learned. Lynas and Neo have no ground truth;
+they are guarded by the checks alone.
 
 The checks catch symptoms, not every error. To test them, an earlier `N/A` bug was put back on
 purpose: it produces three wrong MP FY2022 values, and the checks flag one of them (a −$19/kg price,
@@ -184,8 +216,10 @@ for f in FY2025 FY2024 FY2023 FY2022 FY2021 FY2020; do
   python scripts/build_rows.py mp $f         # + label map -> data/processed/mp_extracted_FYyyyy.csv
 done
 for f in FY2026 FY2025 FY2024 FY2023 FY2022 FY2021 FY2020 FY2019; do
-  python scripts/extract_rows.py lynas $f
-  python scripts/build_rows.py lynas $f
+  python scripts/extract_rows.py lynas $f && python scripts/build_rows.py lynas $f
+done
+for f in FY2025 FY2024 FY2023 FY2022; do
+  python scripts/extract_rows.py neo $f && python scripts/build_rows.py neo $f
 done
 python scripts/score.py                      # MP FY2025 accuracy vs ground truth
 python scripts/self_checker.py               # checks on every report, and across reports
@@ -214,30 +248,36 @@ minutes each for MP's FY2021, FY2023 and FY2024 PDFs (400+ pages, exhibits inclu
 | `lynas_financial_FY2021.pdf` | Appendix 4E, year to 30 June 2021 | 83 | `c7466d4ce5d073e481d738647a4d6e67104d72061e1119791e207c9bba9d2f51` |
 | `lynas_financial_FY2020.pdf` | Appendix 4E, year to 30 June 2020 (Lynas Corporation Ltd) | 75 | `6e948130e4f52730b2f28cdf30bf0e219d93d327948104cd4b2b1c48866a9ada` |
 | `lynas_financial_FY2019.pdf` | Appendix 4E, year to 30 June 2019 (Lynas Corporation Ltd) | 71 | `f1a46d82d75de601c49cfbc95dbdd3363791777793a4863d4932cde900114616` |
+| `neo_mda_FY2025.pdf` | Neo MD&A, year to 31 Dec 2025 (SEDAR+, neomaterials.com) | 34 | `bb6c83f93ecff625a8f25e69b960b40efd88d5ec1c52643d412e33b5f8e778c0` |
+| `neo_mda_FY2024.pdf` | same, year to 31 Dec 2024 | 31 | `f5a902931d667bdeb195679ab937976fbb2ed3580438300e818ca2ba01ad1560` |
+| `neo_mda_FY2023.pdf` | same, year to 31 Dec 2023 | 54 | `5300fe29623a95a303020529e019e2946b14b0c925e6218516e2687b172d498a` |
+| `neo_mda_FY2022.pdf` | same, year to 31 Dec 2022 | 52 | `e4fa9624f321e80f6e62fef1fcbf65d7683cb4e15ff405892ebbf81d33e90908` |
 
-Lynas Corporation Ltd became Lynas Rare Earths Ltd between the FY2020 and FY2021 reports (same ACN 009 066 648). The glossy
-Lynas annual reports for FY2019–FY2024 contain the same financial report and are kept only for
-reference. A browser "Print to PDF" copy has no text layer and different page numbers; this project
-started with one.
+Lynas Corporation Ltd became Lynas Rare Earths Ltd between the FY2020 and FY2021 reports (same ACN
+009 066 648): one company, one identity in the data. The glossy Lynas annual reports for FY2019–FY2024
+contain the same financial report and are kept only for reference. A browser "Print to PDF" copy has
+no text layer and different page numbers; this project started with one.
 
 ## Known limitations
 
-- Two companies, US and Australian reporting habits. The parser still assumes English labels,
-  parentheses for negatives, and that a table's years appear on a header line.
+- Three companies, English-language reports. The parser still assumes English labels, parentheses for
+  negatives, and that a table's years appear on a header line.
 - The chart covers MP only.
+- Neo states no prices, so its numbers have no price check; Neo FY2020 has revenue only.
 - MP's composition table is treated as having no period; the FY2020 → FY2021 revision is recorded as
   an exception rather than modelled as a dated estimate.
 - Some years come from one report only and cannot be cross-checked (see the table above).
-- "In thousands, except per share data" is applied to per-share rows too (not mapped, so no effect).
+- Scope changes are recorded for Neo only so far. Neo's businesses belonged to Molycorp before 2016;
+  pre-2017 figures for the same plants would be a different company.
 - A heading carries over until the next heading, so a line can inherit the wrong section name. Map
   lines that need a heading name it explicitly; the rest match under any heading.
 
 ## Roadmap
 
-- **More English-language companies**: Neo Performance Materials next, then JL Mag's English Hong
-  Kong reports (an English route into a Chinese company).
+- **JL Mag** (English Hong Kong reports): next, and a bridge to Chinese-language sources.
 - **Close the open questions**: the Lynas FY2025 and FY2017–FY2018 price gaps (quarterly reports,
   older annual reports).
+- **Older Neo MD&As** (FY2019–FY2021): a second and third source for FY2020–FY2021.
 - **Chinese sources**: the schema already carries `language` and `scale_factor` (for 万 and 亿);
   next is a feasibility test on one report and a `parse_quantity(text, lang)` with tests.
 - **Cross-source reconciliation**: company figures against USGS, IEA and trade data.
@@ -252,7 +292,8 @@ started with one.
 ## Repository layout
 
 ```
-config/            companies list; per company: table list (where to look), label map (what it means)
+config/            companies list; per company: tables (where to look), label map (what it means),
+                   scope changes (optional)
 data/ground-truth/ 20 checked rows: workbook + CSV (tracked)
 data/raw/          source PDFs (ignored; see "Run it")
 data/interim/      parser output per report (ignored, regenerated)
