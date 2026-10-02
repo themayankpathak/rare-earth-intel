@@ -1,8 +1,9 @@
+import collections
 import re
 import sys
 import pdfplumber
 import pandas as pd
-from text_cleaner import parse_line
+from text_cleaner import EMPTY, parse_line
 
 # Which company and filing to read, e.g. "python scripts/extract_rows.py lynas FY2026".
 COMPANY, FILING = sys.argv[1], sys.argv[2]
@@ -37,17 +38,25 @@ def printed_page_number(text):
     # The page number printed in the footer: a number at the end or start of the last line,
     # or of the line before it when the very last line is a label ("... Financial Report 11" / "Appendix 4E").
     # "44" (10-K) / "Lynas Rare Earths Limited | 2026 Annual Report 65" / "18 www.LynasRareEarths.com"
-    last_lines = list(reversed(text.strip().splitlines()[-2:]))
+    # A page number has one to three digits, so a year ("February 2026") is never taken for one.
+    def page_number(word):
+        return word.isdigit() and len(word) <= 3
+    lines = text.strip().splitlines()
+    last_lines = list(reversed(lines[-2:]))
     for line in last_lines:
         words = line.split()
         for word in (words[-1:] + words[:1]):
-            if word.isdigit():
+            if page_number(word):
                 return int(word)
     # Number in the middle of the footer: "Neo Performance Materials Inc. 18 2025 Management's ..."
-    # (one to three digits, so a year like 2025 is never taken for a page number).
     for word in last_lines[0].split():
-        if word.isdigit() and len(word) <= 3:
+        if page_number(word):
             return int(word)
+    # Page number in the header instead (USGS chapters: "133" as the first line; "14 5" when the PDF spaces
+    # its digits apart).
+    first = lines[0].replace(" ", "") if lines else ""
+    if page_number(first):
+        return int(first)
     return None
 
 
@@ -119,7 +128,7 @@ def is_header(line, label, values):
     return (scale_line or not values or not label) and bool(year_runs(line))
 
 
-def extract_page(text, table, pdf_page, years, scale):
+def extract_page(text, table, pdf_page, years, scale, estimates):
     # Read one page top to bottom and return one row per number.
     # years: the year columns until a header says otherwise ("none" tables keep ["not_applicable"]).
     # scale: starting scale, for pages with no scale line.
@@ -141,6 +150,7 @@ def extract_page(text, table, pdf_page, years, scale):
                 years, skip = column_layout(line, order)
                 break
     order = False
+    block_estimated = False
 
     for line in lines:
         # A scale line ("in thousands", "in whole units") applies to every number below it.
@@ -164,18 +174,26 @@ def extract_page(text, table, pdf_page, years, scale):
             continue
         if is_scale_line or not label:
             continue
+        # A line with no numbers starts a new block: estimated throughout if its heading is marked "e".
+        if not values:
+            block_estimated = line in estimates["marked"]
         # A short line with no numbers is a heading: remember it as the group.
         if not values:
             if len(label.split()) < 6 and not label.endswith("."):
                 group = label
             continue
 
+        # Each value's estimate mark ("e"), if the publisher printed one (USGS); otherwise no marks.
+        flags = estimates["lines"].get(line, [])
+        flags = flags if len(flags) == len(values) else [False] * len(values)
+        values = [(raw, number, flag) for (raw, number), flag in zip(values, flags)]
+
         # Keep the full-year values: drop percentages (change columns), pass over the quarter block,
         # then pair each value with its year column, left to right.
         if has_years:
             values = [v for v in values if not v[0].endswith("%")]
         values = values[skip:skip + len(years)]
-        for year, (raw, number) in zip(years, values):
+        for year, (raw, number, flag) in zip(years, values):
             rows.append({
                 "table": table,
                 "printed_page": printed_page,
@@ -186,14 +204,60 @@ def extract_page(text, table, pdf_page, years, scale):
                 "raw_text": raw,
                 "value_reported": number,
                 "scale_factor": scale,
+                "estimate": flag or year in estimates["years"] or block_estimated or line in estimates["marked"],
             })
     return rows
 
 
-# Read the text of every page once (slow on long filings: a minute or two).
+def superscript_size(page):
+    # Characters smaller than this are superscripts (footnote numbers, "e" for estimated): under three
+    # quarters of the page's most common text size (USGS: 5 and 6.5 point against 10 point).
+    sizes = collections.Counter(round(c["size"], 1) for c in page.chars)
+    return 0.75 * sizes.most_common(1)[0][0]
+
+
+def value_like(token):
+    # A token in the original line that holds a table value: a number (possibly with a footnote or an "e"
+    # glued on) or a placeholder such as "—", "NA" or "W".
+    return bool(re.fullmatch(r"e?\d[\d,.]*", token)) or token in EMPTY
+
+
+def read_page(page, drop_superscripts):
+    # The page's text, plus which values the publisher marked as estimates.
+    # With drop_superscripts (USGS), small characters are removed first, so a footnote glued to a number
+    # ("Australia 1216,000" = footnote 12 + 16,000) no longer changes the number. The removed "e" marks
+    # are kept as estimate flags: per line, one flag per value, and the years whose column header says "e".
+    if not drop_superscripts:
+        return page.extract_text() or "", {"years": set(), "lines": {}, "marked": set()}
+    size = superscript_size(page)
+    clean = page.filter(lambda o: o.get("object_type") != "char" or o["size"] >= size)
+    original_lines = page.extract_text_lines()
+    estimates = {"years": set(), "lines": {}, "marked": set()}
+    for line in original_lines:
+        estimates["years"] |= {f"FY{y}" for y in re.findall(r"\b(\d{4})e\b", line["text"])}
+    for line in clean.extract_text_lines():
+        # The same line before the superscripts were removed: the one at the same height on the page.
+        original = min(original_lines, key=lambda o: abs(o["top"] - line["top"]))
+        flags = [token.startswith("e") for token in original["text"].split() if value_like(token)]
+        estimates["lines"][line["text"]] = flags
+        # A superscript "e" right after a word ("Mine production" + e, "Production:" + e) marks everything
+        # that heading covers as estimated, not just one number.
+        chars = original["chars"]
+        if any(c["text"] == "e" and c["size"] < size and i > 0 and not chars[i - 1]["text"].isdigit()
+               for i, c in enumerate(chars)):
+            estimates["marked"].add(line["text"])
+    return clean.extract_text() or "", estimates
+
+
+def read_pdf(path, drop_superscripts):
+    # Read the text of every page once (slow on long filings: a minute or two).
+    with pdfplumber.open(path) as pdf:
+        pages = [read_page(page, drop_superscripts) for page in pdf.pages]
+    return [text for text, _ in pages], [estimates for _, estimates in pages]
+
+
 print(f"Reading {PDF_PATH} ...")
-with pdfplumber.open(PDF_PATH) as pdf:
-    texts = [page.extract_text() or "" for page in pdf.pages]
+texts, estimates = read_pdf(PDF_PATH, company["superscripts"] == "drop")
 
 # Read the tables in the order they are listed in the tables file (this order sets the row_ids).
 tables = pd.read_csv(TABLES, dtype=str).fillna("")
@@ -206,7 +270,7 @@ for _, t in tables.iterrows():
     # Year columns: read from the table header, or none (the composition table has no year).
     years = DEFAULT_YEARS if t["years"] == "header" else ["not_applicable"]
     scale = int(t["start_scale"]) if t["start_scale"] else None
-    found = extract_page(texts[pdf_page - 1], t["table"], pdf_page, years, scale)
+    found = extract_page(texts[pdf_page - 1], t["table"], pdf_page, years, scale, estimates[pdf_page - 1])
     print(f"  {t['table']:<13} pdf p.{pdf_page} (printed p.{printed_page_number(texts[pdf_page - 1])}): {len(found)} values")
     rows += found
 

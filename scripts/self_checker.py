@@ -3,8 +3,8 @@ import re
 import pdfplumber
 import pandas as pd
 
-# Every filing the pipeline has built, for every company, e.g. data/processed/lynas_extracted_FY2026.csv.
-FILES = sorted(glob.glob("data/processed/*_extracted_FY*.csv"))
+# Every report the pipeline has built, for every source: data/processed/lynas_extracted_FY2026.csv, usgs_extracted_ED2025.csv.
+FILES = sorted(glob.glob("data/processed/*_extracted_*.csv"))
 IDENTITY = ["entity", "entity_scope", "segment", "material", "metric", "period"]  # what a number is
 
 # Plausible ranges per (metric, unit), in base units.
@@ -21,6 +21,10 @@ RANGES = {
     ("non_revenue_income", "USD"): (0, 10_000_000_000),
     ("intersegment_elimination", "USD"): (-10_000_000_000, 0),
     ("composition_pct", "percent"): (0, 100),  # percentage points (15.7, not 0.157)
+    ("market_price", "USD_per_kg"): (0.5, 10_000),
+    # A country's or the world's mine production is far larger than one company's.
+    ("production_volume", "tonnes", "country"): (0, 1_000_000),
+    ("production_volume", "tonnes", "world"): (0, 2_000_000),
 }
 
 # Known reasons a check does not pass. Each check still runs and prints its numbers.
@@ -39,12 +43,16 @@ LYNAS_CENT_PRICE = ("five-year table prices (two decimals) are about one cent of
 LYNAS_FY17_18_PRICE = ("FY17 and FY18 stated prices are ~2% above revenue / volume (18.0 vs 17.58; 21.6 vs 21.17), "
                        "in the FY2019, FY2020 and FY2021 reports. Lead, unconfirmed: the FY2019 report calls revenue "
                        "'net sales revenue', so the old price may be on gross sales. FY2017-18 reports not collected")
+USGS_ND_2021 = ("2021 neodymium oxide price is $49/kg in the 2022 and 2023 editions and $98/kg from the 2024 "
+                "edition on; 2020 is unchanged. The price source footnote changed at the same time (Argus Metals "
+                "International -> Argus Non-Ferrous Metals), but that alone does not explain one restated year")
 KNOWN_EXCEPTIONS = {
     ("price", "MP Materials", "total_REO", "FY2019"): ("EXPECTED", NON_GAAP_PRICE),
     ("price", "MP Materials", "total_REO", "FY2020"): ("EXPECTED", NON_GAAP_PRICE),
     ("price", "MP Materials", "total_REO", "FY2021"): ("EXPECTED", NON_GAAP_PRICE),
-    ("same number", "MP Materials", "composition_pct", "Ce"): ("EXPECTED", COMPOSITION_REVISED),
-    ("same number", "MP Materials", "composition_pct", "La"): ("EXPECTED", COMPOSITION_REVISED),
+    ("same number", "MP Materials", "composition_pct", "Ce", "not_applicable"): ("EXPECTED", COMPOSITION_REVISED),
+    ("same number", "MP Materials", "composition_pct", "La", "not_applicable"): ("EXPECTED", COMPOSITION_REVISED),
+    ("same number", "Rare earth market (USGS)", "market_price", "Nd", "FY2021"): ("OPEN", USGS_ND_2021),
     ("price", "Lynas Rare Earths", "total_REO", "FY2025"): ("OPEN", LYNAS_FY25_PRICE),
     ("price", "Lynas Rare Earths", "total_REO", "FY2022"): ("OPEN", LYNAS_CENT_PRICE),
     ("price", "Lynas Rare Earths", "total_REO", "FY2019"): ("OPEN", LYNAS_CENT_PRICE),
@@ -62,12 +70,33 @@ def report(ok, message, exception=None):
     print(f"{status:<10}{message}" + (f"  [{exception[1]}]" if exception and not ok else ""))
 
 
+COMPANIES = pd.read_csv("config/companies.csv", dtype=str)
+
+
+def precision_of(source_document):
+    # "printed": a number is exact to its last printed digit (company reports).
+    # "significant": trailing zeros are rounding (USGS: "Data are rounded to two significant digits").
+    for _, c in COMPANIES.iterrows():
+        if source_document.startswith(c["file_prefix"] + "_"):
+            return c["precision"]
+    return "printed"
+
+
 def step(row):
-    # How finely this number is printed, in base units: "556.5" (A$m) -> 100,000; "41,992" ($k) -> 1,000.
-    # The true value can be anywhere within half a step of the printed one.
+    # How finely this number is printed, in base units: "556.5" (A$m) -> 100,000; "41,992" ($k) -> 1,000;
+    # in USGS tables "45,000" -> 1,000 and "42,400" -> 100. The true value is within half a step.
     digits = re.sub(r"[^\d.]", "", str(row["raw_text"]))
+    if not digits:
+        return 0  # a printed dash: exactly zero
     decimals = len(digits.split(".")[1]) if "." in digits else 0
+    if precision_of(row["source_document"]) == "significant" and decimals == 0 and digits.strip("0"):
+        return 10 ** (len(digits) - len(digits.rstrip("0"))) * row["scale_factor"]
     return 10 ** -decimals * row["scale_factor"]
+
+
+def is_estimate(row):
+    # The publisher marked the value "e" (USGS); a later edition is expected to revise it.
+    return "Estimate (marked e" in str(row["notes"])
 
 
 def value(rows, metric, material, period, segment="Materials"):
@@ -96,7 +125,7 @@ for path in FILES:
 
     # Check 2: every value is inside the plausible range for its metric and unit.
     for _, row in rows.iterrows():
-        low, high = RANGES[(row["metric"], row["unit"])]
+        low, high = RANGES.get((row["metric"], row["unit"], row["entity_scope"]), RANGES.get((row["metric"], row["unit"])))
         report(low <= row["value_base"] <= high,
                f"{row['row_id']} {row['metric']} = {row['value_base']:,.10g} {row['unit']} within range")
 
@@ -189,10 +218,38 @@ for identity, group in combined.groupby(IDENTITY, dropna=False):
     lows = [v - step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
     highs = [v + step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
     # Each value with where it came from, e.g. "252,468,000 (FY2024 p.43)".
-    values = ", ".join(f"{v:,.10g} ({doc[-10:-4]} p.{p})"
+    values = ", ".join(f"{v:,.10g} ({doc[-10:-4]} " + (f"p.{p:.0f})" if pd.notna(p) else "no page number)")
                        for v, doc, p in zip(group["value_base"], group["source_document"], group["printed_page"]))
-    report(max(lows) <= min(highs), f"{name}: {values}",
-           KNOWN_EXCEPTIONS.get(("same number", entity, metric, material)))
+    agree = max(lows) <= min(highs)
+    exception = KNOWN_EXCEPTIONS.get(("same number", entity, metric, material, period))
+    if not agree and not exception:
+        # An estimate revised by a later edition is expected, as long as the figures that are not
+        # estimates agree with each other.
+        final = [(lo, hi) for lo, hi, (_, r) in zip(lows, highs, group.iterrows()) if not is_estimate(r)]
+        if len(final) < len(group) and (len(final) <= 1 or max(lo for lo, _ in final) <= min(hi for _, hi in final)):
+            exception = ("EXPECTED", "an earlier edition's estimate (e) was revised in a later edition")
+    report(agree, f"{name}: {values}", exception)
 print(f"({single_source} numbers appear in only one place, so they cannot be cross-checked)")
+
+# Check 7: a company's own production against the government's figure for its country, where the company is the
+# country's main producer and both count the same thing (config/companies.csv, column usgs_country: MP and the
+# United States, both in tonnes of REO in concentrate, calendar years). Each side uses its latest report;
+# the company figure must fall within the USGS figure's rounding.
+print("\n===== Company against government (USGS)")
+production = combined[(combined["metric"] == "production_volume") & (combined["material"] == "total_REO")
+                      & (combined["chain_stage"] == "concentrate")].sort_values("source_document")
+for _, c in COMPANIES.dropna(subset=["usgs_country"]).iterrows():
+    own = production[production["entity"] == c["entity"]].drop_duplicates("period", keep="last")
+    usgs = production[(production["entity"] == c["usgs_country"])
+                      & production["source_document"].str.startswith("usgs_")].drop_duplicates("period", keep="last")
+    for _, gov in usgs.iterrows():
+        mine = own[own["period"] == gov["period"]]
+        if not len(mine):
+            continue
+        company_value = mine["value_base"].iloc[0]
+        within = abs(company_value - gov["value_base"]) <= step(gov) / 2
+        report(within, f"{gov['period']} {c['entity']} {company_value:,.0f} t ({mine['source_document'].iloc[0][-10:-4]}) "
+                       f"vs USGS {c['usgs_country']} {gov['value_base']:,.0f} t ({gov['source_document'][-10:-4]} edition, "
+                       f"rounded to {step(gov):,.0f} t)")
 
 print(f"\n{counts['FAIL']} failures, {counts['EXPECTED']} expected (explained), {counts['OPEN']} open (unexplained)")

@@ -4,8 +4,10 @@ import re
 NUMBER = re.compile(r"^\(?\d{1,3}(,\d{3})*(\.\d+)?\)?$")
 # A footnote marker stuck to the end of a label, like "SEG+(1)".
 FOOTNOTE = re.compile(r"\(\d\)$")
-# What the 10-K prints for "no value in this column": dashes, and "N/A" (e.g. NdPr volumes before 2023).
-EMPTY = {"—", "–", "-", "N/A"}
+# What a report prints for "no number in this column": dashes, "N/A" (MP NdPr volumes before 2023), and the
+# USGS codes NA (not available), W (withheld), XX (not applicable), E (net exporter). Each keeps its column,
+# so the numbers after it stay under the right year.
+EMPTY = {"—", "–", "-", "N/A", "NA", "W", "XX", "E"}
 
 
 def is_value(token):

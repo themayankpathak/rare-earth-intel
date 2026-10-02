@@ -1,0 +1,20 @@
+table,group,label,entity,entity_scope,segment,material,chain_stage,metric,basis,unit,currency,price_basis,confidence,scale,notes
+salient,*,Mineral concentrates,United States,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,"USGS: US mine production, REO equivalent. Includes producers other than Mountain Pass (monazite in the southeastern US; Utah compounds per the 2026 edition)"
+salient,*,"Production, bastnaesite concentrates",United States,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,"USGS: US mine production, REO equivalent. Includes producers other than Mountain Pass (monazite in the southeastern US; Utah compounds per the 2026 edition)"
+salient,*,"Neodymium oxide, 99.5% minimum",Rare earth market (USGS),market,,Nd,oxide,market_price,gross_weight,USD_per_kg,USD,market,high,1,"USGS average price, dollars per kilogram of oxide; price source named in each edition's footnote"
+salient,*,"Neodymium-praseodymium (NdPr) oxide, 99% minimum",Rare earth market (USGS),market,,NdPr,oxide,market_price,gross_weight,USD_per_kg,USD,market,high,1,"USGS average price, dollars per kilogram of oxide; price source named in each edition's footnote"
+salient,*,"Dysprosium oxide, 99.5% minimum",Rare earth market (USGS),market,,Dy,oxide,market_price,gross_weight,USD_per_kg,USD,market,high,1,"USGS average price, dollars per kilogram of oxide; price source named in each edition's footnote"
+salient,*,"Terbium oxide, 99.99% minimum",Rare earth market (USGS),market,,Tb,oxide,market_price,gross_weight,USD_per_kg,USD,market,high,1,"USGS average price, dollars per kilogram of oxide; price source named in each edition's footnote"
+world,*,United States,United States,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,"USGS: US mine production, REO equivalent. Includes producers other than Mountain Pass (monazite in the southeastern US; Utah compounds per the 2026 edition)"
+world,*,Australia,Australia,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Brazil,Brazil,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Burma,Burma,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Burma (Myanmar),Burma,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,Named 'Burma (Myanmar)' in the 2019-2021 editions
+world,*,China,China,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,Production quota; does not include undocumented production (USGS footnote)
+world,*,India,India,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Madagascar,Madagascar,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Malaysia,Malaysia,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Russia,Russia,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Thailand,Thailand,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,Vietnam,Vietnam,country,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,
+world,*,World total (rounded),World,world,,total_REO,concentrate,production_volume,contained_REO,tonnes,none,not_applicable,high,1,"USGS world total, rounded"

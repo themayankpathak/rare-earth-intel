@@ -1,4 +1,5 @@
-company,entity,file_prefix,year_end
-mp,MP Materials,mp-materials_10k,12-31
-lynas,Lynas Rare Earths,lynas_financial,06-30
-neo,Neo Performance Materials,neo_mda,12-31
+company,entity,file_prefix,year_end,doc_type,superscripts,dash_means,precision,usgs_country
+mp,MP Materials,mp-materials_10k,12-31,annual,keep,empty,printed,United States
+lynas,Lynas Rare Earths,lynas_financial,06-30,annual,keep,empty,printed,
+neo,Neo Performance Materials,neo_mda,12-31,annual,keep,empty,printed,
+usgs,U.S. Geological Survey,usgs_mcs,12-31,statistics,drop,zero,significant,

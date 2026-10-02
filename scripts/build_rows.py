@@ -8,7 +8,7 @@ company = pd.read_csv("config/companies.csv", dtype=str).set_index("company").lo
 EXTRACTED = f"data/interim/{COMPANY}_extracted_rows_{FILING}.csv"
 LABEL_MAP = f"config/{COMPANY}_label_map.csv"
 OUTPUT = f"data/processed/{COMPANY}_extracted_{FILING}.csv"
-IDENTITY = ["entity_scope", "segment", "material", "metric", "period"]  # what a number is
+IDENTITY = ["entity", "entity_scope", "segment", "material", "metric", "period"]  # what a number is
 COLUMNS = [
     "row_id", "entity", "entity_scope", "segment", "material", "chain_stage",
     "metric", "basis", "period", "period_granularity", "period_end_date",
@@ -20,10 +20,12 @@ COLUMNS = [
 
 extracted = pd.read_csv(EXTRACTED)
 label_map = pd.read_csv(LABEL_MAP)
-# Optional map columns: "scale" (for labels that carry their own unit, like "(A$m)") and "notes".
-for optional in ["scale", "notes"]:
+# Optional map columns: "scale" (for labels that carry their own unit, like "(A$m)"), "notes", and "entity"
+# (who a number is about, when it is not the publisher: each country in the USGS world table).
+for optional in ["scale", "notes", "entity"]:
     if optional not in label_map.columns:
         label_map[optional] = None
+label_map = label_map.rename(columns={"entity": "map_entity"})
 
 # Labels are matched ignoring capital letters: "REO sales volume (MTs)" (FY2021) = "REO Sales Volume (MTs)".
 extracted["line"] = extracted.index          # remember each line's position, to keep the page order
@@ -46,14 +48,18 @@ rows = pd.concat([specific, general]).sort_values("line")
 if rows["line"].duplicated().any():
     sys.exit("STOP: a line matched more than one map entry. Check the label map.")
 
+# A dash means "nothing here" in a company report but "zero" in USGS tables (its legend: "— Zero").
+if company["dash_means"] == "zero":
+    is_dash = rows["raw_text"].isin(["—", "–", "-"])
+    rows.loc[is_dash, "value_reported"] = 0
 # Drop empty values (dash or N/A printed).
 rows = rows.dropna(subset=["value_reported"])
 
-# Fields that are the same for every row of this filing.
-rows["entity"] = company["entity"]
+# Fields that are the same for every row of this filing (entity: unless the map names who the number is about).
+rows["entity"] = rows["map_entity"].fillna(company["entity"])
 rows["derivation"] = "as_reported"
 rows["derived_from"] = None
-rows["doc_type"] = "annual"
+rows["doc_type"] = company["doc_type"]
 rows["source_document"] = f"{company['file_prefix']}_{FILING}.pdf"
 rows["language"] = "en"
 
@@ -66,11 +72,21 @@ rows["scale_factor"] = rows["scale"].fillna(rows["scale_factor"])
 is_year = rows["period"].str.startswith("FY")
 rows["period_granularity"] = is_year.map({True: "FY", False: None})
 rows["period_end_date"] = (rows["period"].str[2:] + "-" + company["year_end"]).where(is_year)
-# A prior-year figure inside this filing is a comparative. A row with no year is not.
-rows["is_comparative"] = (is_year & (rows["period"] != FILING)).map({True: "TRUE", False: "FALSE"})
+# A figure for an earlier year than the latest one in this filing is a comparative. A row with no year is not.
+# (For a company report the latest year is the filing year; a USGS edition's latest year is the year before.)
+latest = rows.loc[is_year, "period"].max()
+rows["is_comparative"] = (is_year & (rows["period"] != latest)).map({True: "TRUE", False: "FALSE"})
 
 # The number in base units: printed value times its scale.
 rows["value_base"] = rows["value_reported"] * rows["scale_factor"]
+
+# Estimates: a value the publisher marked "e" (USGS) is flagged in its notes and given low confidence,
+# because a later edition is expected to revise it.
+if "estimate" in rows.columns:
+    marked = rows["estimate"].fillna(False).astype(bool)
+    rows.loc[marked, "notes"] = rows.loc[marked, "notes"].fillna("").str.cat(
+        ["Estimate (marked e by the publisher)"] * marked.sum(), sep="; ").str.lstrip("; ")
+    rows.loc[marked, "confidence"] = "low"
 
 # Scope changes: when a segment sold or closed a facility, its numbers from that year on describe a
 # different business. Add the recorded note to every affected row (config/<company>_scope_changes.csv,
