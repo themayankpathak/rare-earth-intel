@@ -28,3 +28,6 @@ data/raw/
 !data/ground-truth/*.csv
 !data/ground-truth/*.xlsx
 !config/*.csv
+
+# The website publishes its own copy of the data
+!docs/data/*.csv

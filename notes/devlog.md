@@ -252,3 +252,28 @@ skipped in dates; a duplicated map line) each fails exactly one named test.
 **Decision:** Tests use real report lines as text, not PDFs, so CI needs nothing that is not in the repo.
 
 **Next:** Web app: data explorer first, then questions answered with citations.
+
+## 2026-10-03 — Day 13 (continued): v9, the website
+
+**Did:** Owner chose to keep shipping and apply now (learning alongside; mock interview before the first
+real interview), and chose a designed website over a Streamlit data tool (the Streamlit version was built
+and parked). One page, `docs/index.html`, served by GitHub Pages from `docs/`: the hero is a real USGS line
+as a computer reads it (`Australia 1216,000 1213,000 135,700,000`), whose glued footnote digits shrink back
+into superscripts on load, with what it actually says underneath; then the traps (MP pairing-trap chart,
+Neo revenue per tonne by segment, glued footnotes, revised estimates), MP against USGS, how it works, the
+open questions, and every number browsable (search, filters, 25 rows then "show 100 more") and
+downloadable. Colours from the salts of neodymium (lilac), praseodymium (green) and erbium (rose); Public
+Sans for text, IBM Plex Mono only for lines quoted as printed. New `scripts/build_site.py` writes
+`docs/data/` (numbers.json, site.json, rare_earth_intel.csv); the checker saves every check to
+`data/interim/checks.csv`. `tests/test_site.py`: the data files agree with each other, no check failed,
+every open/expected item has a reason, the page links its data and chart. MP-vs-USGS check lines now come
+out in a fixed order (a sort without a tie order made them vary between runs).
+
+**Result:** 58 tests pass. Checked in a headless browser at desktop and phone widths: no script errors,
+all tables filled, search works, the hero line fits a phone screen, page length 9,000 px.
+
+**Found:** A sort that does not keep ties in order made the report's line order change between runs.
+Reviewing screenshots caught three design problems before release: footnotes that left gaps when they
+lifted, a chart too narrow to read, and a 29,000 px page from showing 200 rows.
+
+**Next:** Turn on GitHub Pages (Settings → Pages → main, /docs). Add the site to the CV.

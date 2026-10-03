@@ -1,0 +1,126 @@
+{
+ "numbers": 877,
+ "documents": 26,
+ "checks": {
+  "PASS": 2041,
+  "FAIL": 0,
+  "EXPECTED": 46,
+  "OPEN": 15
+ },
+ "mp_vs_usgs": [
+  {
+   "year": "2025",
+   "mp": 50692.0,
+   "mp_document": "mp-materials_10k_FY2025.pdf",
+   "usgs": 51000.0,
+   "usgs_document": "usgs_mcs_ED2026.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2024",
+   "mp": 45455.0,
+   "mp_document": "mp-materials_10k_FY2025.pdf",
+   "usgs": 45500.0,
+   "usgs_document": "usgs_mcs_ED2026.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2023",
+   "mp": 41557.0,
+   "mp_document": "mp-materials_10k_FY2025.pdf",
+   "usgs": 41600.0,
+   "usgs_document": "usgs_mcs_ED2026.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2022",
+   "mp": 42499.0,
+   "mp_document": "mp-materials_10k_FY2024.pdf",
+   "usgs": 42500.0,
+   "usgs_document": "usgs_mcs_ED2026.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2021",
+   "mp": 42413.0,
+   "mp_document": "mp-materials_10k_FY2023.pdf",
+   "usgs": 42400.0,
+   "usgs_document": "usgs_mcs_ED2026.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2020",
+   "mp": 38503.0,
+   "mp_document": "mp-materials_10k_FY2022.pdf",
+   "usgs": 39000.0,
+   "usgs_document": "usgs_mcs_ED2025.pdf",
+   "status": "PASS"
+  },
+  {
+   "year": "2019",
+   "mp": 27620.0,
+   "mp_document": "mp-materials_10k_FY2021.pdf",
+   "usgs": 28000.0,
+   "usgs_document": "usgs_mcs_ED2024.pdf",
+   "status": "PASS"
+  }
+ ],
+ "neo_fy2025": [
+  {
+   "part": "C&O",
+   "revenue": 135030000.0,
+   "tonnes": 6953.0,
+   "per_tonne": 19420.394074500215
+  },
+  {
+   "part": "Magnequench",
+   "revenue": 204555000.0,
+   "tonnes": 6063.0,
+   "per_tonne": 33738.24839188521
+  },
+  {
+   "part": "Whole company",
+   "revenue": 478793000.0,
+   "tonnes": 13216.0,
+   "per_tonne": 36228.28389830508
+  },
+  {
+   "part": "Rare Metals",
+   "revenue": 147665000.0,
+   "tonnes": 320.0,
+   "per_tonne": 461453.125
+  }
+ ],
+ "open": [
+  {
+   "reason": "FY17 and FY18 stated prices are ~2% above revenue / volume (18.0 vs 17.58; 21.6 vs 21.17), in the FY2019, FY2020 and FY2021 reports. Lead, unconfirmed: the FY2019 report calls revenue 'net sales revenue', so the old price may be on gross sales. FY2017-18 reports not collected",
+   "lines": 5
+  },
+  {
+   "reason": "five-year table prices (two decimals) are about one cent off revenue / volume in FY2019 (18.97 vs 18.98) and FY2022 (60.27 vs 60.28); the one-decimal prices in the sales table reconcile. Cause not yet found",
+   "lines": 5
+  },
+  {
+   "reason": "FY25 stated A$50.6/kg vs revenue / volume A$50.73/kg, in both the FY2025 and FY2026 reports; would need revenue A$1.35m lower than printed. Not explained by the revenue note (FY2025 report printed p.78): revenue from contracts A$542.7m gives 49.47, total revenue A$556.5m gives 50.73",
+   "lines": 4
+  },
+  {
+   "reason": "2021 neodymium oxide price is $49/kg in the 2022 and 2023 editions and $98/kg from the 2024 edition on; 2020 is unchanged. The price source footnote changed at the same time (Argus Metals International -> Argus Non-Ferrous Metals), but that alone does not explain one restated year",
+   "lines": 1
+  }
+ ],
+ "expected": [
+  {
+   "reason": "an earlier edition's estimate (e) was revised in a later edition",
+   "lines": 38
+  },
+  {
+   "reason": "Realized Price for FY2019-FY2021 uses non-GAAP Total Value Realized, not GAAP revenue - FY2021 10-K printed p.34 (definition) and p.45 (reconciliation)",
+   "lines": 6
+  },
+  {
+   "reason": "estimated element distribution revised between the FY2020 10-K (printed p.13) and the FY2021 10-K (printed p.26)",
+   "lines": 2
+  }
+ ]
+}

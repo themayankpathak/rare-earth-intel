@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rare Earth Intel — numbers that keep their meaning</title>
+<meta name="description" content="Numbers from rare earth company reports and USGS statistics, each kept with its page and its meaning, and checked automatically.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<style>
+  /* Colours from the salts of the magnet rare earths: neodymium lilac (meaning), praseodymium green
+     (checks that pass), erbium rose (traps). Slate ink on a cool pale grey. */
+  :root {
+    --paper: #eef0f3;
+    --sheet: #ffffff;
+    --ink: #1d2433;
+    --muted: #586174;
+    --rule: #d3d8e0;
+    --nd: #6f52a0;
+    --nd-soft: #ece7f5;
+    --pr: #3f7347;
+    --pr-soft: #e4efe5;
+    --er: #b03f66;
+    --er-soft: #f7e4eb;
+    --text: "Public Sans", system-ui, sans-serif;
+    --printed: "IBM Plex Mono", ui-monospace, monospace;
+    --measure: 40rem;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--paper); color: var(--ink); font: 400 1.0625rem/1.6 var(--text); }
+  a { color: var(--nd); text-underline-offset: 0.18em; }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid var(--nd); outline-offset: 2px; }
+  main { padding: 0 1.25rem 4rem; }
+  .column { max-width: var(--measure); margin: 0 auto; }
+  .wide { max-width: 64rem; margin: 0 auto; }
+
+  /* --- top line ------------------------------------------------------------------------------- */
+  .masthead { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.25rem 0; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.95rem; }
+  .masthead strong { font-weight: 800; letter-spacing: -0.01em; }
+  .masthead nav a { color: var(--ink); margin-left: 1.1rem; }
+
+  /* --- hero: one printed line, then what it says --------------------------------------------- */
+  .hero { max-width: 64rem; margin: 0 auto; padding: 4.5rem 0 3.5rem; }
+  .printed-line { font: 500 clamp(0.95rem, 4.3vw, 2.6rem)/1.5 var(--printed); letter-spacing: -0.02em; white-space: nowrap; overflow-x: auto; padding: 0.3rem 0 0.4rem; }
+  /* The one animation on the page: the glued footnote digits shrink back into superscripts. */
+  .printed-line .fn { position: relative; top: 0; font-size: 1em; color: var(--ink); animation: lift 1s cubic-bezier(.2,.7,.2,1) 0.8s forwards; }
+  @keyframes lift { to { font-size: 0.5em; top: -0.95em; color: var(--er); } }
+  .caption-printed { font-size: 0.9rem; color: var(--muted); margin: 0 0 1.6rem; }
+  .reading { display: grid; grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr)); gap: 0.75rem 1.5rem; border-left: 3px solid var(--nd); padding: 0.2rem 0 0.2rem 1rem; max-width: 52rem; }
+  .reading div { font-size: 0.98rem; }
+  .reading b { display: block; font-size: 1.35rem; font-weight: 700; color: var(--nd); font-variant-numeric: tabular-nums; }
+  .reading .bad b { color: var(--er); text-decoration: line-through; text-decoration-thickness: 2px; }
+  h1 { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.08; letter-spacing: -0.03em; font-weight: 800; margin: 3rem 0 1rem; max-width: 16ch; }
+  .lede { font-size: 1.2rem; max-width: var(--measure); color: var(--ink); margin: 0 0 1.4rem; }
+  .facts { max-width: var(--measure); color: var(--muted); margin: 0 0 1.8rem; }
+  .facts span { color: var(--ink); font-weight: 700; font-variant-numeric: tabular-nums; }
+  .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+  .button { display: inline-block; padding: 0.7rem 1.1rem; border-radius: 6px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 500; }
+  .button.quiet { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+
+  /* --- sections -------------------------------------------------------------------------------- */
+  section { padding: 3.5rem 0 1rem; border-top: 1px solid var(--rule); }
+  h2 { font-size: 1.85rem; line-height: 1.15; letter-spacing: -0.02em; font-weight: 800; margin: 0 0 1rem; max-width: 24ch; }
+  h3 { font-size: 1.2rem; margin: 2.4rem 0 0.5rem; letter-spacing: -0.01em; }
+  p { margin: 0 0 1rem; }
+  .note { font-size: 0.92rem; color: var(--muted); }
+  figure { margin: 1.5rem 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; padding: 1rem; }
+  /* The chart is wider than the text so its labels stay readable. */
+  .column figure { width: min(58rem, calc(100vw - 2.5rem)); margin-left: 50%; transform: translateX(-50%); }
+  figure img { width: 100%; height: auto; display: block; }
+  figcaption { font-size: 0.9rem; color: var(--muted); margin-top: 0.6rem; }
+  code, .raw { font-family: var(--printed); font-size: 0.92em; }
+
+  /* --- tables ----------------------------------------------------------------------------------- */
+  .table-wrap { overflow-x: auto; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; margin: 1rem 0 1.5rem; }
+  table { border-collapse: collapse; width: 100%; font-size: 0.95rem; font-variant-numeric: tabular-nums; }
+  th, td { text-align: left; padding: 0.55rem 0.8rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+  th { font-weight: 700; background: #f6f7f9; white-space: nowrap; }
+  td.num, th.num { text-align: right; white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  tr.whole td { background: var(--er-soft); }
+  .pass { color: var(--pr); font-weight: 700; }
+  .open { color: var(--er); font-weight: 700; }
+
+  /* --- how it works: a real sequence ---------------------------------------------------------- */
+  ol.steps { list-style: none; counter-reset: step; padding: 0; margin: 1.2rem 0; }
+  ol.steps li { counter-increment: step; position: relative; padding: 0 0 1.1rem 2.6rem; }
+  ol.steps li::before { content: counter(step); position: absolute; left: 0; top: 0.05rem; width: 1.7rem; height: 1.7rem; border-radius: 50%; background: var(--nd-soft); color: var(--nd); font-weight: 800; font-size: 0.9rem; display: grid; place-items: center; }
+  ol.steps b { display: block; }
+
+  /* --- open questions ------------------------------------------------------------------------- */
+  .questions { padding: 0; list-style: none; margin: 1rem 0; }
+  .questions li { background: var(--sheet); border-left: 3px solid var(--er); padding: 0.8rem 1rem; margin-bottom: 0.7rem; border-radius: 0 6px 6px 0; }
+
+  /* --- browse ---------------------------------------------------------------------------------- */
+  .filters { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 0.6rem; margin: 1rem 0 0.4rem; }
+  .filters label { font-size: 0.85rem; color: var(--muted); display: grid; gap: 0.25rem; }
+  input, select { font: inherit; padding: 0.55rem 0.65rem; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); }
+  #browse td { font-size: 0.88rem; }
+  #browse td.notes { color: var(--muted); max-width: 22rem; }
+  .status { font-size: 0.9rem; color: var(--muted); margin: 0.4rem 0; }
+  .more { font: inherit; padding: 0.6rem 1rem; border-radius: 6px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
+  .more[hidden] { display: none; }
+
+  footer { max-width: 64rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; border-top: 1px solid var(--rule); font-size: 0.92rem; color: var(--muted); }
+
+  @media (max-width: 640px) {
+    .filters { grid-template-columns: 1fr; }
+    .hero { padding-top: 3rem; }
+    .masthead nav a { margin: 0 1rem 0 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .printed-line .fn { animation: none; font-size: 0.5em; top: -0.95em; color: var(--er); }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <strong>Rare Earth Intel</strong>
+  <nav aria-label="Sections">
+    <a href="#traps">Traps</a><a href="#independent">Independent check</a><a href="#method">Method</a><a href="#numbers">Browse the numbers</a>
+  </nav>
+</header>
+
+<main>
+  <div class="hero">
+    <p class="caption-printed">A line from the U.S. Geological Survey's 2025 rare earths report, as a computer reads it:</p>
+    <div class="printed-line" aria-label="Australia 1216,000 1213,000 135,700,000">Australia <span class="fn">12</span>16,000 <span class="fn">12</span>13,000 <span class="fn">13</span>5,700,000</div>
+    <p class="caption-printed">What it actually says, once the small footnote numbers are separated from the figures:</p>
+    <div class="reading">
+      <div><b>16,000 t</b>mine production, 2023</div>
+      <div><b>13,000 t</b>mine production, 2024 (estimate)</div>
+      <div><b>5,700,000 t</b>reserves</div>
+      <div class="bad"><b>135,700,000 t</b>what a careless reader takes away: 24 times too much</div>
+    </div>
+
+    <h1>Numbers in reports are easy to read and easy to misuse.</h1>
+    <p class="lede">This project reads rare earth companies' annual reports and government statistics, keeps every number with its page and what it means, and checks it automatically.</p>
+    <p class="facts">So far: <span id="f-numbers">877</span> numbers from <span id="f-documents">26</span> documents (MP Materials, Lynas Rare Earths, Neo Performance Materials and the U.S. Geological Survey), with <span id="f-pass">2,041</span> checks passed and <span id="f-fail">0</span> failed.</p>
+    <div class="actions">
+      <a class="button" href="https://github.com/themayankpathak/rare-earth-intel">Read the code on GitHub</a>
+      <a class="button quiet" href="data/rare_earth_intel.csv" download>Download all the numbers (CSV)</a>
+    </div>
+  </div>
+
+  <section id="traps" class="column">
+    <h2>Where the numbers mislead</h2>
+    <p>Each of these is a real case from the documents. None of them is obvious from the numbers alone; all of them are obvious to someone who reads the right page.</p>
+
+    <h3>The wrong revenue divided by the right volume</h3>
+    <p>MP Materials reports a price for its rare earth concentrate. Divide <em>total company</em> revenue by concentrate volume instead, and for five years the answer looks fine. Then MP starts refining and selling magnet materials, and the same calculation overstates the price by 41% in 2024 and 435% in 2025.</p>
+    <figure>
+      <img src="price_trap.png" alt="Line chart, 2019 to 2025. The right price (concentrate revenue divided by concentrate volume) and the wrong one (total revenue divided by concentrate volume) run together until 2023, then split: in 2025 the wrong one is $25,156 per tonne against $4,707.">
+      <figcaption>Concentrate price per tonne of rare earth content, right and wrong, from MP's 10-K filings.</figcaption>
+    </figure>
+
+    <h3>Tonnes of different things added together</h3>
+    <p>Neo Performance Materials reports one sales volume for the whole company. It adds rare earth chemicals, magnet materials and hafnium together, so revenue per tonne for the whole company describes none of them:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Part of Neo, 2025</th><th class="num">Revenue (US$)</th><th class="num">Tonnes sold</th><th class="num">Revenue per tonne</th></tr></thead>
+      <tbody id="neo"></tbody>
+    </table></div>
+    <p class="note">Revenue per tonne is calculated in code from the printed figures. Every Neo volume is stored with low confidence and a note that it is a product mix.</p>
+
+    <h3>A footnote glued to a number</h3>
+    <p>In the line at the top of this page, footnote numbers printed in small type run straight into the figures in the PDF's text. Read naively, China's production becomes 11,105,000 tonnes and Australia's reserves 135.7 million. The pipeline removes characters printed smaller than the text before reading, so a footnote can never change a number.</p>
+
+    <h3>An estimate that later doubles</h3>
+    <p>USGS marks most production figures as estimates and revises them in the next edition. Australia's 2024 production is 13,000 tonnes in the 2025 edition and 29,000 in the 2026 edition. The checks treat a revised estimate as expected, and a revised reported figure as a question.</p>
+    <p class="note">More: <a href="https://github.com/themayankpathak/rare-earth-intel#why-this-exists">the full list of traps found</a>, from tonnes that aren't physical tonnes to a unit label that is wrong in the source.</p>
+  </section>
+
+  <section id="independent" class="column">
+    <h2>A company checked against the government</h2>
+    <p>The U.S. Geological Survey publishes US rare earth mine production every year, and MP Materials is the main US producer. The two never share a spreadsheet. MP's own figure falls within the USGS figure's rounding every year:</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Year</th><th class="num">MP's 10-K (tonnes)</th><th class="num">USGS (tonnes)</th><th>Result</th></tr></thead>
+      <tbody id="mp-usgs"></tbody>
+    </table></div>
+    <p class="note">Tonnes of rare earth oxide in concentrate, each from its latest report. USGS rounds its figures, so 45,000 means anything from 44,500 to 45,500.</p>
+  </section>
+
+  <section id="method" class="column">
+    <h2>How it works</h2>
+    <ol class="steps">
+      <li><b>Find the table.</b> Each table is found by phrases printed on its page, never by page number, because page numbers change every year. If a phrase matches two pages, the run stops instead of guessing.</li>
+      <li><b>Read the line.</b> The exact printed text of every number is kept, with its page. Year columns are read from the table's own header, whether it shows three years, five, or a quarter next to the full year.</li>
+      <li><b>Attach the meaning.</b> A small map per source says what each line is: which company, part, material, unit and scale. When the source itself is wrong, the map records the true meaning with a note, and the printed number is never changed.</li>
+      <li><b>Check everything.</b> Revenue divided by volume must agree with every stated price; segments must add up; every number printed in more than one place must agree; and the company must agree with the government.</li>
+      <li><b>Explain or flag.</b> A check that fails with a reason printed in a document is marked expected, with the page. One that fails without a reason stays open.</li>
+    </ol>
+    <p class="note">No language model does arithmetic here: numbers go into the table and division happens in code. The Python was written with AI assistance; the domain rules, the choice of traps and the design are mine.</p>
+  </section>
+
+  <section id="unexplained" class="column">
+    <h2>What is still unexplained</h2>
+    <p><span id="open-count">15</span> check lines fail with no reason found yet. They are listed here rather than hidden or loosened:</p>
+    <ul class="questions" id="open"></ul>
+    <p class="note">Another <span id="expected-count">46</span> lines fail for a documented reason: MP's price before 2022 is a non-GAAP measure, its concentrate estimate was revised in 2021, and USGS estimates are revised in later editions.</p>
+  </section>
+
+  <section id="numbers" class="wide">
+    <div class="column" style="margin-left:0">
+      <h2>Browse the numbers</h2>
+      <p>Every number, with the document and page it came from and its exact printed text. Search by company, country, year, material or note.</p>
+    </div>
+    <div class="filters">
+      <label>Search<input id="q" type="search" placeholder="for example: Lynas FY2024 price"></label>
+      <label>Source<select id="who"><option value="">All</option></select></label>
+      <label>What<select id="what"><option value="">All</option></select></label>
+    </div>
+    <p class="status" id="browse-status" aria-live="polite">Loading the numbers…</p>
+    <div class="table-wrap"><table id="browse">
+      <thead><tr><th>Who</th><th>Year</th><th>What</th><th>Material</th><th class="num">Value</th><th>Unit</th><th>Document</th><th class="num">Page</th><th>As printed</th><th>Notes</th></tr></thead>
+      <tbody></tbody>
+    </table></div>
+    <button class="more" id="more" type="button" hidden>Show 100 more</button>
+  </section>
+</main>
+
+<footer>
+  Built by Mayank Pathak, who works in the NdFeB magnet supply chain. Source documents: MP Materials 10-K filings (SEC EDGAR), Lynas Rare Earths financial reports (ASX), Neo Performance Materials MD&amp;As (SEDAR+), USGS Mineral Commodity Summaries. Every document is identified by its SHA-256 hash in the <a href="https://github.com/themayankpathak/rare-earth-intel">repository</a>.
+</footer>
+
+<script>
+// Fill the page from data/site.json and data/numbers.json, written by scripts/build_site.py.
+const number = (v, digits = 0) => v == null ? "" : Number(v).toLocaleString("en-US", { maximumFractionDigits: digits });
+const escape = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const year = doc => doc.slice(-10, -4);   // "usgs_mcs_ED2026.pdf" -> "ED2026"
+
+fetch("data/site.json").then(r => r.json()).then(site => {
+  document.getElementById("f-numbers").textContent = number(site.numbers);
+  document.getElementById("f-documents").textContent = site.documents;
+  document.getElementById("f-pass").textContent = number(site.checks.PASS);
+  document.getElementById("f-fail").textContent = number(site.checks.FAIL);
+  document.getElementById("open-count").textContent = site.checks.OPEN;
+  document.getElementById("expected-count").textContent = site.checks.EXPECTED;
+
+  document.getElementById("neo").innerHTML = site.neo_fy2025.map(r =>
+    `<tr class="${r.part === "Whole company" ? "whole" : ""}"><td>${escape(r.part)}</td><td class="num">${number(r.revenue)}</td>` +
+    `<td class="num">${number(r.tonnes)}</td><td class="num">$${number(r.per_tonne)}</td></tr>`).join("");
+
+  document.getElementById("mp-usgs").innerHTML = site.mp_vs_usgs.map(r =>
+    `<tr><td>${r.year}</td><td class="num">${number(r.mp)}</td><td class="num">${number(r.usgs)} <span class="note">(${year(r.usgs_document).replace("ED", "")} edition)</span></td>` +
+    `<td class="${r.status === "PASS" ? "pass" : "open"}">${r.status === "PASS" ? "Agree" : escape(r.status)}</td></tr>`).join("");
+
+  document.getElementById("open").innerHTML = site.open.map(q =>
+    `<li>${escape(q.reason)} <span class="note">(${q.lines} check line${q.lines > 1 ? "s" : ""})</span></li>`).join("");
+});
+
+// Browse: filter all numbers in the browser; show 25 at first, 100 more per click.
+let shown = 25;
+let rows = [];
+const tbody = document.querySelector("#browse tbody");
+const status = document.getElementById("browse-status");
+
+function render() {
+  const words = document.getElementById("q").value.toLowerCase().split(/\s+/).filter(Boolean);
+  const who = document.getElementById("who").value, what = document.getElementById("what").value;
+  const matching = rows.filter(r => (!who || r.entity === who) && (!what || r.metric === what) &&
+    words.every(w => r._text.includes(w)));
+  tbody.innerHTML = matching.slice(0, shown).map(r =>
+    `<tr><td>${escape(r.entity)}</td><td>${escape(r.period)}</td><td>${escape(r.metric.replaceAll("_", " "))}</td>` +
+    `<td>${escape(r.material)}</td><td class="num">${number(r.value_base, 2)}</td><td>${escape(r.unit.replaceAll("_", " "))}</td>` +
+    `<td>${escape(r.source_document)}</td><td class="num">${r.printed_page ?? ""}</td><td class="raw">${escape(r.raw_text)}</td>` +
+    `<td class="notes">${escape(r.notes)}</td></tr>`).join("");
+  status.textContent = matching.length > shown
+    ? `Showing ${shown} of ${number(matching.length)} matching numbers.`
+    : `${number(matching.length)} matching number${matching.length === 1 ? "" : "s"}.`;
+  document.getElementById("more").hidden = matching.length <= shown;
+}
+
+fetch("data/numbers.json").then(r => r.json()).then(data => {
+  rows = data.map(r => ({ ...r, _text: Object.values(r).join(" ").toLowerCase() }));
+  const fill = (id, values) => document.getElementById(id).insertAdjacentHTML("beforeend",
+    [...new Set(values)].sort().map(v => `<option>${escape(v)}</option>`).join(""));
+  fill("who", rows.map(r => r.entity));
+  fill("what", rows.map(r => r.metric));
+  ["q", "who", "what"].forEach(id => document.getElementById(id).addEventListener("input", () => { shown = 25; render(); }));
+  document.getElementById("more").addEventListener("click", () => { shown += 100; render(); });
+  render();
+}).catch(() => { status.textContent = "The numbers could not be loaded. Open this page through a web server (see README), not as a local file."; });
+</script>
+</body>
+</html>

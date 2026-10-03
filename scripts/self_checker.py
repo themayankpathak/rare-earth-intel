@@ -1,4 +1,5 @@
 import glob
+import os
 import re
 import pdfplumber
 import pandas as pd
@@ -61,12 +62,24 @@ KNOWN_EXCEPTIONS = {
 }
 
 counts = {"PASS": 0, "FAIL": 0, "EXPECTED": 0, "OPEN": 0}
+results = []          # every check, also saved as a table (CHECKS_OUTPUT) for the website
+section = ""          # which part of the run a check belongs to (a document, "Same number ...", ...)
+CHECKS_OUTPUT = "data/interim/checks.csv"  # every check as a table; scripts/build_site.py reads it
+
+
+def start_section(name):
+    # Print a section heading and remember it for the saved table.
+    global section
+    section = name
+    print(f"\n===== {name}")
 
 
 def report(ok, message, exception=None):
     # Print one line per check: PASS, FAIL, or the status of a known exception (EXPECTED / OPEN).
     status = "PASS" if ok else (exception[0] if exception else "FAIL")
     counts[status] += 1
+    results.append({"section": section, "status": status, "check": message,
+                     "reason": exception[1] if exception and not ok else ""})
     print(f"{status:<10}{message}" + (f"  [{exception[1]}]" if exception and not ok else ""))
 
 
@@ -112,7 +125,7 @@ def main():
     for path in FILES:
         rows = pd.read_csv(path)
         filing = rows["source_document"].iloc[0]
-        print(f"\n===== {filing} ({len(rows)} rows)")
+        start_section(f"{filing} ({len(rows)} rows)")
 
         # Check 1: every raw_text really appears on the page it cites.
         # Each cited page is read once and kept, because reading pages is the slow part.
@@ -208,7 +221,7 @@ def main():
     # Check 6: a number printed in more than one place - another filing, or another table of the same
     # report - must agree, allowing for how finely each copy is printed (A$977.9m and A$977,945k agree).
     # A difference means a restatement, a revised estimate or a parsing error: a person should look.
-    print("\n===== Same number, every place it is printed")
+    start_section("Same number, every place it is printed")
     combined = pd.concat(everything)
     single_source = 0
     for identity, group in combined.groupby(IDENTITY, dropna=False):
@@ -237,13 +250,14 @@ def main():
     # country's main producer and both count the same thing (config/companies.csv, column usgs_country: MP and the
     # United States, both in tonnes of REO in concentrate, calendar years). Each side uses its latest report;
     # the company figure must fall within the USGS figure's rounding.
-    print("\n===== Company against government (USGS)")
+    start_section("Company against government (USGS)")
     production = combined[(combined["metric"] == "production_volume") & (combined["material"] == "total_REO")
-                          & (combined["chain_stage"] == "concentrate")].sort_values("source_document")
+                          & (combined["chain_stage"] == "concentrate")].sort_values("source_document", kind="stable")
     for _, c in COMPANIES.dropna(subset=["usgs_country"]).iterrows():
         own = production[production["entity"] == c["entity"]].drop_duplicates("period", keep="last")
         usgs = production[(production["entity"] == c["usgs_country"])
                           & production["source_document"].str.startswith("usgs_")].drop_duplicates("period", keep="last")
+        usgs = usgs.sort_values("period", ascending=False)   # a fixed order: newest year first
         for _, gov in usgs.iterrows():
             mine = own[own["period"] == gov["period"]]
             if not len(mine):
@@ -255,6 +269,10 @@ def main():
                            f"rounded to {step(gov):,.0f} t)")
 
     print(f"\n{counts['FAIL']} failures, {counts['EXPECTED']} expected (explained), {counts['OPEN']} open (unexplained)")
+
+    # Save every check as a table, for the website.
+    os.makedirs(os.path.dirname(CHECKS_OUTPUT), exist_ok=True)
+    pd.DataFrame(results).to_csv(CHECKS_OUTPUT, index=False)
 
 
 # Run from the terminal: python scripts/self_checker.py

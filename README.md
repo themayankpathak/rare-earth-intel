@@ -6,8 +6,8 @@ A small, auditable pipeline that reads rare earth companies' annual reports, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v8, October 2026. Three companies and one government source, twenty-six documents, one label
-map per source, 54 unit tests run on every push:
+**Status:** v9, October 2026. Three companies and one government source, twenty-six documents, one label
+map per source, 58 unit tests run on every push, and a website: **[themayankpathak.github.io/rare-earth-intel](https://themayankpathak.github.io/rare-earth-intel/)**
 
 | Source | What it is | Documents | Years covered |
 |---|---|---|---|
@@ -140,6 +140,12 @@ Everything company-specific is configuration, not code:
    table, no line has two meanings, every metric has a plausible range). Re-introducing three past bugs
    (N/A skipped, the Lynas date header, a map line with two meanings) each fails a named test.
 
+8. **Website** ([`docs/index.html`](docs/index.html), served by GitHub Pages from `docs/`). One page: a
+   real report line with a footnote glued to its numbers, the traps, MP against USGS, how it works, the
+   open questions, and every number browsable and downloadable with its document and page. It reads
+   `docs/data/`, written by [`scripts/build_site.py`](scripts/build_site.py) from the pipeline's output
+   (the PDFs are not in the repository). No server: it runs in the browser.
+
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
 
@@ -187,8 +193,8 @@ Each check prints PASS, FAIL, or the status of a recorded exception:
     edition on, while 2020 is unchanged. The price source footnote changed in the same edition (Argus
     Metals International → Argus Non-Ferrous Metals), but that alone does not explain one restated year.
 
-The open count (15) counts check lines, not questions: there are five open questions, some printed in
-several tables. Neo states no prices, so it has no price checks; its numbers are guarded by the
+The open count (15) counts check lines, not questions: there are four open questions, most printed in
+several tables or years. Neo states no prices, so it has no price checks; its numbers are guarded by the
 bridges, the volume check and cross-checks between reports.
 
 **The checks caught the pipeline's own mistakes.**
@@ -263,9 +269,11 @@ for e in ED2026 ED2025 ED2024 ED2023 ED2022 ED2021 ED2020 ED2019; do
   python scripts/extract_rows.py usgs $e && python scripts/build_rows.py usgs $e
 done
 python scripts/score.py                      # MP FY2025 accuracy vs ground truth
-python scripts/self_checker.py               # checks on every report, and across reports
+python scripts/self_checker.py               # checks on every report, and across reports -> data/interim/checks.csv
+python scripts/build_site.py                 # the website's data -> docs/data/
 python scripts/plotter.py                    # -> docs/price_trap.png
 pytest                                       # unit tests (no PDFs needed)
+python -m http.server -d docs                # preview the website at http://localhost:8000
 ```
 
 The extractor reads every page once to find the tables: under a minute for most reports, about two
@@ -330,8 +338,10 @@ no text layer and different page numbers; this project started with one.
 
 ## Roadmap
 
-- **Web app** (next): a data explorer with page citations, then questions answered from the table with
-  citations (no arithmetic by the language model).
+- **Questions answered with citations**: a language model turns a question into a lookup in the table,
+  code fetches the rows and does any arithmetic, and the answer quotes each number with its document and
+  page, or says the data isn't there.
+- **A data explorer** (a Streamlit app, built and parked): compare one number across every document.
 - **JL Mag** (English Hong Kong reports): volumes are only in sentences, and production switches from
   finished magnets to blanks in 2024; needs a sentence-level extractor. A bridge to Chinese sources.
 - **Close the open questions**: the Lynas FY2025 and FY2017–FY2018 price gaps (quarterly reports,
@@ -357,7 +367,7 @@ data/ground-truth/ 20 checked rows: workbook + CSV (tracked)
 data/raw/          source PDFs (ignored; see "Run it")
 data/interim/      parser output per report (ignored, regenerated)
 data/processed/    28-column rows per report (ignored, regenerated)
-docs/              the chart
+docs/              the website (index.html, GitHub Pages), its data (docs/data/) and the chart
 notes/             design notes (PROJECT.md), sources, build log
 scripts/           the pipeline
 tests/             unit tests (pytest), run on every push by .github/workflows/tests.yml
