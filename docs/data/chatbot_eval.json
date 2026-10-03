@@ -1,0 +1,246 @@
+{
+ "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+ "date": "2026-10-03",
+ "correct": 19,
+ "total": 20,
+ "refused_correctly": 5,
+ "should_refuse": 5,
+ "results": [
+  {
+   "question": "What was Lynas's average selling price in FY2024?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Lynas Rare Earths",
+    "metric": "avg_selling_price",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2024",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "How many tonnes of rare earths did MP Materials produce in 2023?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "MP Materials",
+    "metric": "production_volume",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2023",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was MP's NdPr production in 2024?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "MP Materials",
+    "metric": "production_volume",
+    "material": "NdPr",
+    "segment": "Materials",
+    "year": "FY2024",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "How much rare earth did China mine in 2024?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "China",
+    "metric": "production_volume",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2024",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was world rare earth mine production in 2023?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "World",
+    "metric": "production_volume",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2023",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was the price of neodymium oxide in 2022?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Rare earth market (USGS)",
+    "metric": "market_price",
+    "material": "Nd",
+    "segment": null,
+    "year": "FY2022",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "Dysprosium oxide price in 2021",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Rare earth market (USGS)",
+    "metric": "market_price",
+    "material": "Dy",
+    "segment": null,
+    "year": "FY2021",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was Neo's Rare Metals revenue in 2025?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Neo Performance Materials",
+    "metric": "revenue",
+    "material": null,
+    "segment": "Rare Metals",
+    "year": "FY2025",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "How many tonnes did Magnequench sell in 2024?",
+   "correct": false,
+   "reply": {
+    "answerable": false,
+    "reason": "Sales volume for Magnequench in 2024 is not available",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What share of MP's concentrate is cerium?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "MP Materials",
+    "metric": "composition_pct",
+    "material": "Ce",
+    "segment": null,
+    "year": null,
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "How much cash did Lynas receive from customers in FY2026?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Lynas Rare Earths",
+    "metric": "cash_receipts",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2026",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was Australia's rare earth production in 2024?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Australia",
+    "metric": "production_volume",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2024",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "Show me MP Materials' revenue over the years",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "MP Materials",
+    "metric": "revenue",
+    "material": null,
+    "segment": null,
+    "year": null,
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was MP's price protection agreement income in 2025?",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "MP Materials",
+    "metric": "non_revenue_income",
+    "material": "NdPr",
+    "segment": "Materials",
+    "year": "FY2025",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "Lynas sales volume FY2023",
+   "correct": true,
+   "reply": {
+    "answerable": true,
+    "entity": "Lynas Rare Earths",
+    "metric": "sales_volume",
+    "material": "total_REO",
+    "segment": null,
+    "year": "FY2023",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What will the NdPr price be next year?",
+   "correct": true,
+   "reply": {
+    "answerable": false,
+    "reason": "NdPr price is not in the data",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "Should I buy MP Materials shares?",
+   "correct": true,
+   "reply": {
+    "answerable": false,
+    "reason": "No financial advice or opinion is available in the data.",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was Iluka's rare earth production in 2024?",
+   "correct": true,
+   "reply": {
+    "answerable": false,
+    "reason": "Iluka is not in the data",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was Lynas's net profit in FY2025?",
+   "correct": true,
+   "reply": {
+    "answerable": false,
+    "reason": "Net profit is not in the data",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  },
+  {
+   "question": "What was MP's revenue in 2015?",
+   "correct": true,
+   "reply": {
+    "answerable": false,
+    "reason": "MP Materials' revenue data for 2015 is not available",
+    "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+   }
+  }
+ ]
+}

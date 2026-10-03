@@ -19,7 +19,8 @@ FIELDS = ["entity", "metric", "material", "segment", "year"]
 def ask(url, question):
     # Send one question to the Worker, as the website does, and return its reply.
     request = urllib.request.Request(url, data=json.dumps({"question": question}).encode(), method="POST",
-                                     headers={"Content-Type": "application/json", "Origin": ORIGIN})
+                                     headers={"Content-Type": "application/json", "Origin": ORIGIN,
+                                              "User-Agent": "Mozilla/5.0 (rare-earth-intel evaluation)"})
     with urllib.request.urlopen(request, timeout=60) as response:
         return json.loads(response.read())
 
