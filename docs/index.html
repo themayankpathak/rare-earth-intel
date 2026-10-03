@@ -287,7 +287,7 @@ fetch("data/site.json").then(r => r.json()).then(site => {
 });
 
 // Question box. ASK_URL is the Cloudflare Worker (worker/worker.js); empty until it is deployed.
-const ASK_URL = "";
+const ASK_URL = "https://rare-earth-intel-ask.im-promptu-mayank.workers.dev/";
 const MATERIAL_WORDS = { total_REO: "all rare earths", NdPr: "NdPr", Nd: "neodymium", Pr: "praseodymium", Dy: "dysprosium",
   Tb: "terbium", Ce: "cerium", La: "lanthanum", "SEG+": "SEG+", not_applicable: "" };
 let numbersReady;   // resolves when numbers.json is loaded (the answers are looked up in it)
