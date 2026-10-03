@@ -1,11 +1,13 @@
 # rare-earth-intel
 
+[![tests](https://github.com/themayankpathak/rare-earth-intel/actions/workflows/tests.yml/badge.svg)](https://github.com/themayankpathak/rare-earth-intel/actions/workflows/tests.yml)
+
 A small, auditable pipeline that reads rare earth companies' annual reports, extracts the numbers
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v7, October 2026. Three companies and one government source, twenty-six documents, one label
-map per source:
+**Status:** v8, October 2026. Three companies and one government source, twenty-six documents, one label
+map per source, 54 unit tests run on every push:
 
 | Source | What it is | Documents | Years covered |
 |---|---|---|---|
@@ -130,6 +132,13 @@ Everything company-specific is configuration, not code:
    another table of the same report) agrees**, allowing for how finely each copy is printed (USGS
    rounds to significant digits); and **a company's own production agrees with the USGS figure for
    its country** (MP and the United States).
+
+7. **Unit tests** ([`tests/`](tests/)), run by GitHub Actions on every push (the badge above). They use
+   real lines from the reports, so they need no PDFs: reading numbers ($, negatives, dashes, N/A, %,
+   footnotes, dot leaders, USGS codes), year columns and quarter blocks, page numbers, anchors, small
+   sample pages, rounding precision, and the config files themselves (every map line points at a real
+   table, no line has two meanings, every metric has a plausible range). Re-introducing three past bugs
+   (N/A skipped, the Lynas date header, a map line with two meanings) each fails a named test.
 
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
@@ -256,6 +265,7 @@ done
 python scripts/score.py                      # MP FY2025 accuracy vs ground truth
 python scripts/self_checker.py               # checks on every report, and across reports
 python scripts/plotter.py                    # -> docs/price_trap.png
+pytest                                       # unit tests (no PDFs needed)
 ```
 
 The extractor reads every page once to find the tables: under a minute for most reports, about two
@@ -320,8 +330,7 @@ no text layer and different page numbers; this project started with one.
 
 ## Roadmap
 
-- **Unit tests and a GitHub check** (CI) running them on every push: next.
-- **Web app**: a data explorer with page citations, then questions answered from the table with
+- **Web app** (next): a data explorer with page citations, then questions answered from the table with
   citations (no arithmetic by the language model).
 - **JL Mag** (English Hong Kong reports): volumes are only in sentences, and production switches from
   finished magnets to blanks in 2024; needs a sentence-level extractor. A bridge to Chinese sources.
@@ -351,6 +360,7 @@ data/processed/    28-column rows per report (ignored, regenerated)
 docs/              the chart
 notes/             design notes (PROJECT.md), sources, build log
 scripts/           the pipeline
+tests/             unit tests (pytest), run on every push by .github/workflows/tests.yml
 ```
 
 ## About

@@ -1,0 +1,18 @@
+# Runs the unit tests on every push and pull request; the README badge shows the latest result.
+# The tests use small text examples from the reports, so the PDFs (not in the repo) are not needed.
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run tests
+        run: pytest -q

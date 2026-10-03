@@ -106,150 +106,158 @@ def value(rows, metric, material, period, segment="Materials"):
     return match["value_base"].iloc[0] if len(match) else None
 
 
-everything = []
-for path in FILES:
-    rows = pd.read_csv(path)
-    filing = rows["source_document"].iloc[0]
-    print(f"\n===== {filing} ({len(rows)} rows)")
+def main():
+    # Run every check on every processed document, print one line per check and the totals.
+    everything = []
+    for path in FILES:
+        rows = pd.read_csv(path)
+        filing = rows["source_document"].iloc[0]
+        print(f"\n===== {filing} ({len(rows)} rows)")
 
-    # Check 1: every raw_text really appears on the page it cites.
-    # Each cited page is read once and kept, because reading pages is the slow part.
-    page_texts = {}
-    with pdfplumber.open("data/raw/" + filing) as pdf:
+        # Check 1: every raw_text really appears on the page it cites.
+        # Each cited page is read once and kept, because reading pages is the slow part.
+        page_texts = {}
+        with pdfplumber.open("data/raw/" + filing) as pdf:
+            for _, row in rows.iterrows():
+                page = row["pdf_page"]
+                if page not in page_texts:
+                    page_texts[page] = " ".join(pdf.pages[page - 1].extract_text().split())
+                report(row["raw_text"] in page_texts[page],
+                       f"{row['row_id']} '{row['raw_text']}' found on printed p.{row['printed_page']}")
+
+        # Check 2: every value is inside the plausible range for its metric and unit.
         for _, row in rows.iterrows():
-            page = row["pdf_page"]
-            if page not in page_texts:
-                page_texts[page] = " ".join(pdf.pages[page - 1].extract_text().split())
-            report(row["raw_text"] in page_texts[page],
-                   f"{row['row_id']} '{row['raw_text']}' found on printed p.{row['printed_page']}")
+            low, high = RANGES.get((row["metric"], row["unit"], row["entity_scope"]), RANGES.get((row["metric"], row["unit"])))
+            report(low <= row["value_base"] <= high,
+                   f"{row['row_id']} {row['metric']} = {row['value_base']:,.10g} {row['unit']} within range")
 
-    # Check 2: every value is inside the plausible range for its metric and unit.
-    for _, row in rows.iterrows():
-        low, high = RANGES.get((row["metric"], row["unit"], row["entity_scope"]), RANGES.get((row["metric"], row["unit"])))
-        report(low <= row["value_base"] <= high,
-               f"{row['row_id']} {row['metric']} = {row['value_base']:,.10g} {row['unit']} within range")
+        # Check 3: revenue / volume must agree with every stated price, allowing for rounding:
+        # the check passes if some unrounded values, each within half a printed step, fit exactly.
+        # Revenue and volume are taken from the price's own page where possible, else anywhere in the filing.
+        # The division happens here, in code, never by an LLM.
+        for _, price in rows[rows["metric"] == "avg_selling_price"].iterrows():
+            same = rows[(rows["entity_scope"] == price["entity_scope"]) & (rows["material"] == price["material"])
+                        & (rows["period"] == price["period"])
+                        & ((rows["segment"] == price["segment"]) | (rows["segment"].isna() & pd.isna(price["segment"])))]
+            picked = []
+            for metric in ["revenue", "sales_volume"]:
+                found = same[same["metric"] == metric]
+                on_page = found[found["pdf_page"] == price["pdf_page"]]
+                picked.append(on_page.iloc[0] if len(on_page) else (found.iloc[0] if len(found) else None))
+            revenue, volume = picked
+            if revenue is None or volume is None:
+                continue
+            per = 1000 if price["unit"].endswith("_per_kg") else 1  # tonnes -> kg for a per-kg price
+            lowest = (revenue["value_base"] - step(revenue) / 2) / ((volume["value_base"] + step(volume) / 2) * per)
+            highest = (revenue["value_base"] + step(revenue) / 2) / ((volume["value_base"] - step(volume) / 2) * per)
+            ok = price["value_base"] - step(price) / 2 <= highest and price["value_base"] + step(price) / 2 >= lowest
+            implied = revenue["value_base"] / (volume["value_base"] * per)
+            report(ok, f"{price['period']} {price['material']} price (printed p.{price['printed_page']}): revenue / volume = "
+                       f"{implied:,.2f} vs stated {price['value_base']:,.10g} {price['unit']}",
+                   KNOWN_EXCEPTIONS.get(("price", price["entity"], price["material"], price["period"])))
 
-    # Check 3: revenue / volume must agree with every stated price, allowing for rounding:
-    # the check passes if some unrounded values, each within half a printed step, fit exactly.
-    # Revenue and volume are taken from the price's own page where possible, else anywhere in the filing.
-    # The division happens here, in code, never by an LLM.
-    for _, price in rows[rows["metric"] == "avg_selling_price"].iterrows():
-        same = rows[(rows["entity_scope"] == price["entity_scope"]) & (rows["material"] == price["material"])
-                    & (rows["period"] == price["period"])
-                    & ((rows["segment"] == price["segment"]) | (rows["segment"].isna() & pd.isna(price["segment"])))]
-        picked = []
-        for metric in ["revenue", "sales_volume"]:
-            found = same[same["metric"] == metric]
-            on_page = found[found["pdf_page"] == price["pdf_page"]]
-            picked.append(on_page.iloc[0] if len(on_page) else (found.iloc[0] if len(found) else None))
-        revenue, volume = picked
-        if revenue is None or volume is None:
+        # Check 4: Materials + Magnetics + eliminations = consolidated revenue (only where all parts are reported).
+        for period in sorted(rows["period"].unique()):
+            materials = value(rows, "revenue", "not_applicable", period)
+            magnetics = value(rows, "revenue", "NdPr", period, segment="Magnetics")
+            elimination = rows[(rows["metric"] == "intersegment_elimination") & (rows["period"] == period)]["value_base"]
+            total = rows[(rows["entity_scope"] == "consolidated") & (rows["metric"] == "revenue")
+                         & (rows["period"] == period)]["value_base"]
+            if None not in (materials, magnetics) and len(elimination) and len(total):
+                bridge = materials + magnetics + elimination.iloc[0]
+                report(bridge == total.iloc[0], f"{period} revenue bridge {bridge:,.0f} = {total.iloc[0]:,.0f}")
+
+        # Check 4b: segment revenues + corporate / eliminations = consolidated revenue, where a report gives
+        # at least two segment totals (Neo). Each segment is counted once even if two tables print it.
+        for period in sorted(rows["period"].unique()):
+            in_year = rows[rows["period"] == period]
+            segments = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "revenue")
+                               & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
+            elimination = in_year[in_year["metric"] == "intersegment_elimination"]["value_base"]
+            total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "revenue")]["value_base"]
+            if len(segments) >= 2 and len(elimination) and len(total):
+                bridge = segments["value_base"].sum() + elimination.iloc[0]
+                report(bridge == total.iloc[0], f"{period} segment revenue bridge: {len(segments)} segments "
+                       f"{segments['value_base'].sum():,.0f} + eliminations {elimination.iloc[0]:,.0f} = {total.iloc[0]:,.0f}")
+
+        # Check 4c: segment sales volumes add up to at least the consolidated volume. Not equal: Neo reports its
+        # segments before intercompany eliminations (C&O sells to Magnequench), so tonnes sold inside the group
+        # are in the segments but not in the consolidated figure (Neo FY2025 MD&A printed p.20).
+        for period in sorted(rows["period"].unique()):
+            in_year = rows[rows["period"] == period]
+            volumes = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "sales_volume")
+                              & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
+            total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "sales_volume")]["value_base"]
+            if len(volumes) >= 2 and len(total):
+                segment_sum = volumes["value_base"].sum()
+                report(segment_sum >= total.iloc[0], f"{period} segment volumes {segment_sum:,.0f} t >= consolidated "
+                       f"{total.iloc[0]:,.0f} t (difference {segment_sum - total.iloc[0]:,.0f} t, consistent with segments "
+                       f"reported before intercompany eliminations)")
+
+        # Check 5: the element shares of the concentrate must add up to 100%.
+        # At least four elements (FY2020 lists Nd and Pr separately, so five); a missing one breaks the sum.
+        # The tolerance (0.05) only absorbs rounding in the printed one-decimal figures.
+        shares = rows[rows["metric"] == "composition_pct"]
+        if len(shares):
+            total_share = shares["value_base"].sum()
+            report(len(shares) >= 4 and abs(total_share - 100) < 0.05,
+                   f"concentrate composition: {len(shares)} elements sum to {total_share:.1f}%")
+
+        everything.append(rows)
+
+    # Check 6: a number printed in more than one place - another filing, or another table of the same
+    # report - must agree, allowing for how finely each copy is printed (A$977.9m and A$977,945k agree).
+    # A difference means a restatement, a revised estimate or a parsing error: a person should look.
+    print("\n===== Same number, every place it is printed")
+    combined = pd.concat(everything)
+    single_source = 0
+    for identity, group in combined.groupby(IDENTITY, dropna=False):
+        if len(group) < 2:
+            single_source += 1
             continue
-        per = 1000 if price["unit"].endswith("_per_kg") else 1  # tonnes -> kg for a per-kg price
-        lowest = (revenue["value_base"] - step(revenue) / 2) / ((volume["value_base"] + step(volume) / 2) * per)
-        highest = (revenue["value_base"] + step(revenue) / 2) / ((volume["value_base"] - step(volume) / 2) * per)
-        ok = price["value_base"] - step(price) / 2 <= highest and price["value_base"] + step(price) / 2 >= lowest
-        implied = revenue["value_base"] / (volume["value_base"] * per)
-        report(ok, f"{price['period']} {price['material']} price (printed p.{price['printed_page']}): revenue / volume = "
-                   f"{implied:,.2f} vs stated {price['value_base']:,.10g} {price['unit']}",
-               KNOWN_EXCEPTIONS.get(("price", price["entity"], price["material"], price["period"])))
+        entity, scope, segment, material, metric, period = identity
+        name = f"{entity} {period} {scope if pd.isna(segment) else segment} {material} {metric}"
+        lows = [v - step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
+        highs = [v + step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
+        # Each value with where it came from, e.g. "252,468,000 (FY2024 p.43)".
+        values = ", ".join(f"{v:,.10g} ({doc[-10:-4]} " + (f"p.{p:.0f})" if pd.notna(p) else "no page number)")
+                           for v, doc, p in zip(group["value_base"], group["source_document"], group["printed_page"]))
+        agree = max(lows) <= min(highs)
+        exception = KNOWN_EXCEPTIONS.get(("same number", entity, metric, material, period))
+        if not agree and not exception:
+            # An estimate revised by a later edition is expected, as long as the figures that are not
+            # estimates agree with each other.
+            final = [(lo, hi) for lo, hi, (_, r) in zip(lows, highs, group.iterrows()) if not is_estimate(r)]
+            if len(final) < len(group) and (len(final) <= 1 or max(lo for lo, _ in final) <= min(hi for _, hi in final)):
+                exception = ("EXPECTED", "an earlier edition's estimate (e) was revised in a later edition")
+        report(agree, f"{name}: {values}", exception)
+    print(f"({single_source} numbers appear in only one place, so they cannot be cross-checked)")
 
-    # Check 4: Materials + Magnetics + eliminations = consolidated revenue (only where all parts are reported).
-    for period in sorted(rows["period"].unique()):
-        materials = value(rows, "revenue", "not_applicable", period)
-        magnetics = value(rows, "revenue", "NdPr", period, segment="Magnetics")
-        elimination = rows[(rows["metric"] == "intersegment_elimination") & (rows["period"] == period)]["value_base"]
-        total = rows[(rows["entity_scope"] == "consolidated") & (rows["metric"] == "revenue")
-                     & (rows["period"] == period)]["value_base"]
-        if None not in (materials, magnetics) and len(elimination) and len(total):
-            bridge = materials + magnetics + elimination.iloc[0]
-            report(bridge == total.iloc[0], f"{period} revenue bridge {bridge:,.0f} = {total.iloc[0]:,.0f}")
+    # Check 7: a company's own production against the government's figure for its country, where the company is the
+    # country's main producer and both count the same thing (config/companies.csv, column usgs_country: MP and the
+    # United States, both in tonnes of REO in concentrate, calendar years). Each side uses its latest report;
+    # the company figure must fall within the USGS figure's rounding.
+    print("\n===== Company against government (USGS)")
+    production = combined[(combined["metric"] == "production_volume") & (combined["material"] == "total_REO")
+                          & (combined["chain_stage"] == "concentrate")].sort_values("source_document")
+    for _, c in COMPANIES.dropna(subset=["usgs_country"]).iterrows():
+        own = production[production["entity"] == c["entity"]].drop_duplicates("period", keep="last")
+        usgs = production[(production["entity"] == c["usgs_country"])
+                          & production["source_document"].str.startswith("usgs_")].drop_duplicates("period", keep="last")
+        for _, gov in usgs.iterrows():
+            mine = own[own["period"] == gov["period"]]
+            if not len(mine):
+                continue
+            company_value = mine["value_base"].iloc[0]
+            within = abs(company_value - gov["value_base"]) <= step(gov) / 2
+            report(within, f"{gov['period']} {c['entity']} {company_value:,.0f} t ({mine['source_document'].iloc[0][-10:-4]}) "
+                           f"vs USGS {c['usgs_country']} {gov['value_base']:,.0f} t ({gov['source_document'][-10:-4]} edition, "
+                           f"rounded to {step(gov):,.0f} t)")
 
-    # Check 4b: segment revenues + corporate / eliminations = consolidated revenue, where a report gives
-    # at least two segment totals (Neo). Each segment is counted once even if two tables print it.
-    for period in sorted(rows["period"].unique()):
-        in_year = rows[rows["period"] == period]
-        segments = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "revenue")
-                           & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
-        elimination = in_year[in_year["metric"] == "intersegment_elimination"]["value_base"]
-        total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "revenue")]["value_base"]
-        if len(segments) >= 2 and len(elimination) and len(total):
-            bridge = segments["value_base"].sum() + elimination.iloc[0]
-            report(bridge == total.iloc[0], f"{period} segment revenue bridge: {len(segments)} segments "
-                   f"{segments['value_base'].sum():,.0f} + eliminations {elimination.iloc[0]:,.0f} = {total.iloc[0]:,.0f}")
+    print(f"\n{counts['FAIL']} failures, {counts['EXPECTED']} expected (explained), {counts['OPEN']} open (unexplained)")
 
-    # Check 4c: segment sales volumes add up to at least the consolidated volume. Not equal: Neo reports its
-    # segments before intercompany eliminations (C&O sells to Magnequench), so tonnes sold inside the group
-    # are in the segments but not in the consolidated figure (Neo FY2025 MD&A printed p.20).
-    for period in sorted(rows["period"].unique()):
-        in_year = rows[rows["period"] == period]
-        volumes = in_year[(in_year["entity_scope"] == "segment") & (in_year["metric"] == "sales_volume")
-                          & (in_year["material"] == "not_applicable")].drop_duplicates("segment")
-        total = in_year[(in_year["entity_scope"] == "consolidated") & (in_year["metric"] == "sales_volume")]["value_base"]
-        if len(volumes) >= 2 and len(total):
-            segment_sum = volumes["value_base"].sum()
-            report(segment_sum >= total.iloc[0], f"{period} segment volumes {segment_sum:,.0f} t >= consolidated "
-                   f"{total.iloc[0]:,.0f} t (difference {segment_sum - total.iloc[0]:,.0f} t, consistent with segments "
-                   f"reported before intercompany eliminations)")
 
-    # Check 5: the element shares of the concentrate must add up to 100%.
-    # At least four elements (FY2020 lists Nd and Pr separately, so five); a missing one breaks the sum.
-    # The tolerance (0.05) only absorbs rounding in the printed one-decimal figures.
-    shares = rows[rows["metric"] == "composition_pct"]
-    if len(shares):
-        total_share = shares["value_base"].sum()
-        report(len(shares) >= 4 and abs(total_share - 100) < 0.05,
-               f"concentrate composition: {len(shares)} elements sum to {total_share:.1f}%")
-
-    everything.append(rows)
-
-# Check 6: a number printed in more than one place - another filing, or another table of the same
-# report - must agree, allowing for how finely each copy is printed (A$977.9m and A$977,945k agree).
-# A difference means a restatement, a revised estimate or a parsing error: a person should look.
-print("\n===== Same number, every place it is printed")
-combined = pd.concat(everything)
-single_source = 0
-for identity, group in combined.groupby(IDENTITY, dropna=False):
-    if len(group) < 2:
-        single_source += 1
-        continue
-    entity, scope, segment, material, metric, period = identity
-    name = f"{entity} {period} {scope if pd.isna(segment) else segment} {material} {metric}"
-    lows = [v - step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
-    highs = [v + step(r) / 2 for v, (_, r) in zip(group["value_base"], group.iterrows())]
-    # Each value with where it came from, e.g. "252,468,000 (FY2024 p.43)".
-    values = ", ".join(f"{v:,.10g} ({doc[-10:-4]} " + (f"p.{p:.0f})" if pd.notna(p) else "no page number)")
-                       for v, doc, p in zip(group["value_base"], group["source_document"], group["printed_page"]))
-    agree = max(lows) <= min(highs)
-    exception = KNOWN_EXCEPTIONS.get(("same number", entity, metric, material, period))
-    if not agree and not exception:
-        # An estimate revised by a later edition is expected, as long as the figures that are not
-        # estimates agree with each other.
-        final = [(lo, hi) for lo, hi, (_, r) in zip(lows, highs, group.iterrows()) if not is_estimate(r)]
-        if len(final) < len(group) and (len(final) <= 1 or max(lo for lo, _ in final) <= min(hi for _, hi in final)):
-            exception = ("EXPECTED", "an earlier edition's estimate (e) was revised in a later edition")
-    report(agree, f"{name}: {values}", exception)
-print(f"({single_source} numbers appear in only one place, so they cannot be cross-checked)")
-
-# Check 7: a company's own production against the government's figure for its country, where the company is the
-# country's main producer and both count the same thing (config/companies.csv, column usgs_country: MP and the
-# United States, both in tonnes of REO in concentrate, calendar years). Each side uses its latest report;
-# the company figure must fall within the USGS figure's rounding.
-print("\n===== Company against government (USGS)")
-production = combined[(combined["metric"] == "production_volume") & (combined["material"] == "total_REO")
-                      & (combined["chain_stage"] == "concentrate")].sort_values("source_document")
-for _, c in COMPANIES.dropna(subset=["usgs_country"]).iterrows():
-    own = production[production["entity"] == c["entity"]].drop_duplicates("period", keep="last")
-    usgs = production[(production["entity"] == c["usgs_country"])
-                      & production["source_document"].str.startswith("usgs_")].drop_duplicates("period", keep="last")
-    for _, gov in usgs.iterrows():
-        mine = own[own["period"] == gov["period"]]
-        if not len(mine):
-            continue
-        company_value = mine["value_base"].iloc[0]
-        within = abs(company_value - gov["value_base"]) <= step(gov) / 2
-        report(within, f"{gov['period']} {c['entity']} {company_value:,.0f} t ({mine['source_document'].iloc[0][-10:-4]}) "
-                       f"vs USGS {c['usgs_country']} {gov['value_base']:,.0f} t ({gov['source_document'][-10:-4]} edition, "
-                       f"rounded to {step(gov):,.0f} t)")
-
-print(f"\n{counts['FAIL']} failures, {counts['EXPECTED']} expected (explained), {counts['OPEN']} open (unexplained)")
+# Run from the terminal: python scripts/self_checker.py
+# (Loading this file from a test does not run the checks; the tests call the functions directly.)
+if __name__ == "__main__":
+    main()

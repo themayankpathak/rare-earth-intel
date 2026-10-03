@@ -231,45 +231,24 @@ config. Estimate revisions are expected; revisions of reported figures are not.
 
 **Next:** Unit tests and a GitHub check (CI). Then the web app (explorer, then questions with citations).
 
-## 2026-10-02 — Day 12: v7, a government source (USGS)
+## 2026-10-03 — Day 13: v8, unit tests and a GitHub check
 
-**Did:** Added the USGS Mineral Commodity Summaries rare earths chapter, editions 2019–2026 (files
-`usgs_mcs_ED2019`–`ED2026`). Two tables per edition: US salient statistics (production, prices of Nd,
-NdPr, Dy and Tb oxides) and world mine production by country. `config/companies.csv` gained per-source
-reading rules: doc_type, superscripts (drop for USGS), dash_means (zero for USGS), precision
-(significant for USGS), usgs_country (MP → United States). Extractor: characters smaller than three
-quarters of the page's main text size are removed before reading (footnote numbers, "e" marks); the
-"e" marks become estimate flags per value, per year column, or for a whole block when on a heading.
-Placeholders NA, W, XX, E keep their column. Page numbers: one to three digits only; also read from a
-page's first line. Build: map lines can name the entity (each country); estimates get a note and low
-confidence; "comparative" now means earlier than the latest year in the document; duplicate guard
-includes the entity. Checks: ranges by scope (country, world); USGS rounding by significant digits;
-an estimate revised by a later edition is EXPECTED if the non-estimates agree; new check: MP's own
-production against USGS's US figure.
+**Did:** Gave `extract_rows.py` and `self_checker.py` a `main()`, run only from the terminal, so tests
+can load the functions without anything running (`find_page` takes the document name for its STOP
+message). 54 pytest tests in `tests/`: text_cleaner (dollars, negatives, dashes, N/A, %, footnotes, dot
+leaders, USGS codes, years not values); extract_rows (year runs incl. FY labels, oldest-first, dates,
+quarter/year blocks; page numbers in every footer style seen; anchors with | and &&, STOP on two pages;
+small sample pages: Neo quarter-first, header after rows, quarterly table, scale line, estimate flags);
+self_checker (printed vs significant precision, dash = zero, estimate flag); config (known reading rules,
+every map table exists, no line with two meanings, every metric has a range). GitHub Actions workflow
+`.github/workflows/tests.yml` runs `pytest` on every push; badge in README. pytest added to requirements.
 
-**Result:** USGS 336 rows from 8 editions, 2014–2025, 13 entities. Companies unchanged (all 18 outputs
-identical to v6); MP 20/20. 2,041 checks pass, 0 fail, 46 expected (38 of them USGS estimate revisions),
-15 open. MP vs USGS: 7 of 7 years agree within USGS rounding (2019–2025). 877 rows in total; 244
-numbers printed in more than one place.
+**Result:** 54 passed in 0.4 s. Refactor checked: all 26 outputs identical to v7; checker output identical
+line for line (2,041 pass, 0 fail, 46 expected, 15 open).
 
-**Found:**
-- The downloaded "2021" chapter was byte-for-byte the 2020 edition (same SHA-256); the real 2021
-  edition was downloaded and added.
-- Footnote numbers glued to values: "China 11105,000" (footnote 11 + 105,000); Australia's reserves
-  read as 135,700,000 are 5,700,000 + footnote 13. They are printed smaller, so they can be removed by size.
-- USGS revises: Australia 2024 13,000 t → 29,000 t (2026 edition, "revised based on Government
-  reports"); China 2023 240,000 → 255,000; US 2021 43,000 → 42,000 → 42,400.
-- Nd oxide 2021 price restated from $49 to $98/kg in the 2024 edition while 2020 stayed; the price
-  source footnote changed at the same time. Logged OPEN.
-- USGS's US production includes more than Mountain Pass (southeastern US monazite; Utah compounds in
-  2026), yet MP agrees within rounding every year. My earlier claim that the US figure "is essentially
-  MP's" was corrected from the documents.
-- In USGS tables "—" means zero, the 2021–2023 chapter files have no printed page numbers, and the
-  2025 file spaces its page number as "14 5".
-- Lynas is not compared with Australia: June fiscal years and finished-product REO vs calendar-year
-  mine output.
+**Found:** Mutation tests — re-introducing three real past bugs (N/A not a placeholder; day/month words not
+skipped in dates; a duplicated map line) each fails exactly one named test.
 
-**Decision:** Government statistics are a source like a company, with their own reading rules in
-config. Estimate revisions are expected; revisions of reported figures are not.
+**Decision:** Tests use real report lines as text, not PDFs, so CI needs nothing that is not in the repo.
 
-**Next:** Unit tests and a GitHub check (CI). Then the web app (explorer, then questions with citations).
+**Next:** Web app: data explorer first, then questions answered with citations.

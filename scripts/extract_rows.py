@@ -5,19 +5,7 @@ import pdfplumber
 import pandas as pd
 from text_cleaner import EMPTY, parse_line
 
-# Which company and filing to read, e.g. "python scripts/extract_rows.py lynas FY2026".
-COMPANY, FILING = sys.argv[1], sys.argv[2]
-company = pd.read_csv("config/companies.csv", dtype=str).set_index("company").loc[COMPANY]
-PDF_PATH = f"data/raw/{company['file_prefix']}_{FILING}.pdf"
-TABLES = f"config/{COMPANY}_tables.csv"  # which tables to read, and the text that identifies each one's page
-OUTPUT = f"data/interim/{COMPANY}_extracted_rows_{FILING}.csv"
-
-# Until a table header says otherwise, assume the filing year and the two years before it.
-YEAR = int(FILING[2:])
-DEFAULT_YEARS = [f"FY{YEAR}", f"FY{YEAR - 1}", f"FY{YEAR - 2}"]
-
-
-def find_page(texts, anchors):
+def find_page(texts, anchors, document="this document"):
     # anchors: one or more alternatives separated by " | ", tried in order (newer wording first).
     # An alternative can require several phrases on the same page, joined by " && "
     # ("10.1 Magnequench && Sales volume (tonnes)": the segment page, not the table of contents).
@@ -28,7 +16,7 @@ def find_page(texts, anchors):
         pages = [i + 1 for i, text in enumerate(texts)
                  if all(phrase in " ".join(text.split()) for phrase in phrases)]
         if len(pages) > 1:
-            sys.exit(f"STOP: '{anchor}' found on several pages {pages} of {FILING}. Make the anchor more specific.")
+            sys.exit(f"STOP: '{anchor}' found on several pages {pages} of {document}. Make the anchor more specific.")
         if pages:
             return pages[0]
     return None
@@ -256,24 +244,41 @@ def read_pdf(path, drop_superscripts):
     return [text for text, _ in pages], [estimates for _, estimates in pages]
 
 
-print(f"Reading {PDF_PATH} ...")
-texts, estimates = read_pdf(PDF_PATH, company["superscripts"] == "drop")
+def main(company_name, filing):
+    # Read one document of one source, e.g. main("lynas", "FY2026"), and save one row per number.
+    company = pd.read_csv("config/companies.csv", dtype=str).set_index("company").loc[company_name]
+    pdf_path = f"data/raw/{company['file_prefix']}_{filing}.pdf"
+    tables_file = f"config/{company_name}_tables.csv"  # which tables to read, and the text that finds each page
+    output = f"data/interim/{company_name}_extracted_rows_{filing}.csv"
 
-# Read the tables in the order they are listed in the tables file (this order sets the row_ids).
-tables = pd.read_csv(TABLES, dtype=str).fillna("")
-rows = []
-for _, t in tables.iterrows():
-    pdf_page = find_page(texts, t["anchor"])
-    if pdf_page is None:
-        print(f"  {t['table']:<13} not in this filing, skipped")
-        continue
-    # Year columns: read from the table header, or none (the composition table has no year).
-    years = DEFAULT_YEARS if t["years"] == "header" else ["not_applicable"]
-    scale = int(t["start_scale"]) if t["start_scale"] else None
-    found = extract_page(texts[pdf_page - 1], t["table"], pdf_page, years, scale, estimates[pdf_page - 1])
-    print(f"  {t['table']:<13} pdf p.{pdf_page} (printed p.{printed_page_number(texts[pdf_page - 1])}): {len(found)} values")
-    rows += found
+    # Until a table header says otherwise, assume the filing year and the two years before it.
+    year = int(filing[2:])
+    default_years = [f"FY{year}", f"FY{year - 1}", f"FY{year - 2}"]
 
-table = pd.DataFrame(rows)
-table.to_csv(OUTPUT, index=False)
-print(f"{len(table)} rows saved to {OUTPUT}")
+    print(f"Reading {pdf_path} ...")
+    texts, estimates = read_pdf(pdf_path, company["superscripts"] == "drop")
+
+    # Read the tables in the order they are listed in the tables file (this order sets the row_ids).
+    tables = pd.read_csv(tables_file, dtype=str).fillna("")
+    rows = []
+    for _, t in tables.iterrows():
+        pdf_page = find_page(texts, t["anchor"], filing)
+        if pdf_page is None:
+            print(f"  {t['table']:<13} not in this filing, skipped")
+            continue
+        # Year columns: read from the table header, or none (the composition table has no year).
+        years = default_years if t["years"] == "header" else ["not_applicable"]
+        scale = int(t["start_scale"]) if t["start_scale"] else None
+        found = extract_page(texts[pdf_page - 1], t["table"], pdf_page, years, scale, estimates[pdf_page - 1])
+        print(f"  {t['table']:<13} pdf p.{pdf_page} (printed p.{printed_page_number(texts[pdf_page - 1])}): {len(found)} values")
+        rows += found
+
+    table = pd.DataFrame(rows)
+    table.to_csv(output, index=False)
+    print(f"{len(table)} rows saved to {output}")
+
+
+# Run from the terminal: python scripts/extract_rows.py lynas FY2026
+# (Loading this file from a test does not run anything; the tests call the functions directly.)
+if __name__ == "__main__":
+    main(sys.argv[1], sys.argv[2])
