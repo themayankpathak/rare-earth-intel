@@ -277,3 +277,27 @@ Reviewing screenshots caught three design problems before release: footnotes tha
 lifted, a chart too narrow to read, and a 29,000 px page from showing 200 rows.
 
 **Next:** Turn on GitHub Pages (Settings → Pages → main, /docs). Add the site to the CV.
+
+## 2026-10-03 — Day 13 (continued): v10, the question box
+
+**Did:** Added "Ask a question" to the website. A language model only turns a question into a lookup (who,
+what, material, part, year); `worker/worker.js` (Cloudflare Worker, Workers AI free tier, no API key, no
+card) accepts it only if every value exists in `docs/data/vocabulary.json` (new, written by build_site.py
+from the data) and refuses everything else. The page finds the figures itself and shows each with its
+document, page and printed text, the other places it is printed, and what was looked up. No arithmetic
+anywhere. 20 test questions with known answers (5 must be refused: forecast, advice, a company, a metric
+and a year not in the data) and `scripts/evaluate_chatbot.py`, which scores the deployed Worker and saves
+the result for the website. `tests/test_chatbot.py`: the test set points only at things that exist; the
+vocabulary matches the published numbers.
+
+**Result:** 61 tests pass. Worker's checking logic tested with Node: an invented company, a metric, year or
+element not in the data, and a reply that is a number instead of a lookup are all refused. Page tested in
+a headless browser against a stand-in Worker: answers, refusal and outage message all render; no errors.
+The real model's accuracy is measured after deployment.
+
+**Decision:** Free Cloudflare Workers AI over Anthropic (cost), Gemini (unpublished free limits, would still
+need a Worker for the key) and Chinese first-party APIs (perception in a China-sensitive industry; Chinese
+open models can still run on Cloudflare). The model choice is a measurement: change one line, re-run the
+20 questions.
+
+**Next:** Owner creates the Cloudflare Worker, adds the AI binding, sets ASK_URL, runs the evaluation, pushes.

@@ -6,8 +6,8 @@ A small, auditable pipeline that reads rare earth companies' annual reports, ext
 into a structured table where every number keeps its meaning, measures its own accuracy against
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
-**Status:** v9, October 2026. Three companies and one government source, twenty-six documents, one label
-map per source, 58 unit tests run on every push, and a website: **[themayankpathak.github.io/rare-earth-intel](https://themayankpathak.github.io/rare-earth-intel/)**
+**Status:** v10, October 2026. Three companies and one government source, twenty-six documents, one label
+map per source, 61 unit tests run on every push, and a website with a question box: **[themayankpathak.github.io/rare-earth-intel](https://themayankpathak.github.io/rare-earth-intel/)**
 
 | Source | What it is | Documents | Years covered |
 |---|---|---|---|
@@ -146,6 +146,15 @@ Everything company-specific is configuration, not code:
    `docs/data/`, written by [`scripts/build_site.py`](scripts/build_site.py) from the pipeline's output
    (the PDFs are not in the repository). No server: it runs in the browser.
 
+9. **Question box** on the website. A language model (open model on Cloudflare Workers AI, free tier)
+   only turns a question into a lookup (who, what, material, part, year); [`worker/worker.js`](worker/worker.js)
+   accepts the lookup only if every value exists in the data (`docs/data/vocabulary.json`) and refuses
+   everything else: forecasts, advice, companies or metrics or years not in the data. The page then finds
+   the figures itself and shows each with its document, page and printed text, plus every other place the
+   same figure is printed. It is measured on 20 questions with known answers, five of which must be refused
+   ([`eval/chatbot_questions.csv`](eval/chatbot_questions.csv), [`scripts/evaluate_chatbot.py`](scripts/evaluate_chatbot.py));
+   the score is shown on the website.
+
 **Rule:** no language model does arithmetic over retrieved text. Numbers go into the table; the
 only division happens in code.
 
@@ -274,6 +283,7 @@ python scripts/build_site.py                 # the website's data -> docs/data/
 python scripts/plotter.py                    # -> docs/price_trap.png
 pytest                                       # unit tests (no PDFs needed)
 python -m http.server -d docs                # preview the website at http://localhost:8000
+python scripts/evaluate_chatbot.py <worker-url>   # score the question box on 20 test questions
 ```
 
 The extractor reads every page once to find the tables: under a minute for most reports, about two
@@ -338,9 +348,6 @@ no text layer and different page numbers; this project started with one.
 
 ## Roadmap
 
-- **Questions answered with citations**: a language model turns a question into a lookup in the table,
-  code fetches the rows and does any arithmetic, and the answer quotes each number with its document and
-  page, or says the data isn't there.
 - **A data explorer** (a Streamlit app, built and parked): compare one number across every document.
 - **JL Mag** (English Hong Kong reports): volumes are only in sentences, and production switches from
   finished magnets to blanks in 2024; needs a sentence-level extractor. A bridge to Chinese sources.
@@ -370,6 +377,8 @@ data/processed/    28-column rows per report (ignored, regenerated)
 docs/              the website (index.html, GitHub Pages), its data (docs/data/) and the chart
 notes/             design notes (PROJECT.md), sources, build log
 scripts/           the pipeline
+worker/            the question box's Cloudflare Worker (pasted into the Cloudflare dashboard)
+eval/              20 test questions with known answers for the question box
 tests/             unit tests (pytest), run on every push by .github/workflows/tests.yml
 ```
 

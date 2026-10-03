@@ -40,6 +40,7 @@
   .masthead { max-width: 64rem; margin: 0 auto; padding: 1.5rem 1.25rem 0; display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; font-size: 0.95rem; }
   .masthead strong { font-weight: 800; letter-spacing: -0.01em; }
   .masthead nav a { color: var(--ink); margin-left: 1.1rem; }
+  .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* --- hero: one printed line, then what it says --------------------------------------------- */
   .hero { max-width: 64rem; margin: 0 auto; padding: 4.5rem 0 3.5rem; }
@@ -104,6 +105,21 @@
   .more { font: inherit; padding: 0.6rem 1rem; border-radius: 6px; border: 1.5px solid var(--ink); background: transparent; color: var(--ink); cursor: pointer; }
   .more[hidden] { display: none; }
 
+  /* --- question box -------------------------------------------------------------------------- */
+  .ask-form { display: flex; gap: 0.6rem; margin: 1rem 0 0.6rem; }
+  .ask-form input { flex: 1; min-width: 0; }
+  .ask-form button { font: inherit; font-weight: 500; padding: 0.55rem 1.1rem; border: 0; border-radius: 6px; background: var(--nd); color: #fff; cursor: pointer; }
+  .ask-form button:disabled { opacity: 0.55; cursor: default; }
+  .examples { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0 0 1rem; }
+  .examples button { font: inherit; font-size: 0.85rem; padding: 0.3rem 0.65rem; border-radius: 999px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); cursor: pointer; }
+  .answer { background: var(--sheet); border: 1px solid var(--rule); border-left: 3px solid var(--nd); border-radius: 0 8px 8px 0; padding: 1rem 1.1rem; margin: 0.5rem 0 1rem; }
+  .answer.refused { border-left-color: var(--er); }
+  .answer .looked-up { font-size: 0.88rem; color: var(--muted); margin-bottom: 0.6rem; }
+  .answer .figure { font-size: 1.15rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .answer .cite { font-size: 0.9rem; color: var(--muted); margin: 0.15rem 0 0.7rem; }
+  .answer .cite .raw { color: var(--ink); }
+  .answer ul { padding-left: 1.1rem; margin: 0.3rem 0 0.7rem; }
+
   footer { max-width: 64rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; border-top: 1px solid var(--rule); font-size: 0.92rem; color: var(--muted); }
 
   @media (max-width: 640px) {
@@ -122,7 +138,7 @@
 <header class="masthead">
   <strong>Rare Earth Intel</strong>
   <nav aria-label="Sections">
-    <a href="#traps">Traps</a><a href="#independent">Independent check</a><a href="#method">Method</a><a href="#numbers">Browse the numbers</a>
+    <a href="#ask">Ask</a><a href="#traps">Traps</a><a href="#independent">Independent check</a><a href="#method">Method</a><a href="#numbers">Browse the numbers</a>
   </nav>
 </header>
 
@@ -146,6 +162,24 @@
       <a class="button quiet" href="data/rare_earth_intel.csv" download>Download all the numbers (CSV)</a>
     </div>
   </div>
+
+  <section id="ask" class="column">
+    <h2>Ask a question</h2>
+    <p>Ask about the numbers in plain words. A language model only decides <em>what to look up</em>; the page finds the figures in the table and shows each one with its document and page. If the data doesn't have it, the answer says so.</p>
+    <form class="ask-form" id="ask-form">
+      <label class="visually-hidden" for="question">Your question</label>
+      <input id="question" type="text" maxlength="300" autocomplete="off" placeholder="What was Lynas's average selling price in FY2024?">
+      <button type="submit" id="ask-button">Ask</button>
+    </form>
+    <div class="examples" id="examples">
+      <button type="button">How much rare earth did China mine in 2024?</button>
+      <button type="button">What was the price of neodymium oxide in 2022?</button>
+      <button type="button">How many tonnes did Magnequench sell in 2024?</button>
+      <button type="button">Should I buy MP Materials shares?</button>
+    </div>
+    <div id="answer" aria-live="polite"></div>
+    <p class="note" id="ask-note"></p>
+  </section>
 
   <section id="traps" class="column">
     <h2>Where the numbers mislead</h2>
@@ -252,6 +286,96 @@ fetch("data/site.json").then(r => r.json()).then(site => {
     `<li>${escape(q.reason)} <span class="note">(${q.lines} check line${q.lines > 1 ? "s" : ""})</span></li>`).join("");
 });
 
+// Question box. ASK_URL is the Cloudflare Worker (worker/worker.js); empty until it is deployed.
+const ASK_URL = "";
+const MATERIAL_WORDS = { total_REO: "all rare earths", NdPr: "NdPr", Nd: "neodymium", Pr: "praseodymium", Dy: "dysprosium",
+  Tb: "terbium", Ce: "cerium", La: "lanthanum", "SEG+": "SEG+", not_applicable: "" };
+let numbersReady;   // resolves when numbers.json is loaded (the answers are looked up in it)
+
+function describe(lookup) {
+  // What was looked up, in words: who, what, and any material, part and year.
+  const parts = [`who: ${lookup.entity}`, `what: ${lookup.metric.replaceAll("_", " ")}`];
+  if (lookup.material) parts.push(`material: ${MATERIAL_WORDS[lookup.material] || lookup.material}`);
+  if (lookup.segment) parts.push(`part: ${lookup.segment}`);
+  parts.push(lookup.year ? `year: ${lookup.year}` : "all years");
+  return parts.join("; ");
+}
+
+function answerFrom(lookup) {
+  // Find the numbers for a lookup. For each kind of figure and year, the newest document comes first and
+  // the other documents that print the same figure are listed after it. The page does no arithmetic.
+  const matches = rows.filter(r => r.entity === lookup.entity && r.metric === lookup.metric &&
+    (!lookup.material || r.material === lookup.material) && (!lookup.segment || r.segment === lookup.segment) &&
+    (!lookup.year || r.period === lookup.year));
+  const groups = new Map();
+  for (const r of matches) {
+    const key = [r.material, r.segment ?? "", r.period].join("|");
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(r);
+  }
+  return [...groups.values()]
+    .map(g => g.sort((a, b) => b.source_document.localeCompare(a.source_document)))
+    .sort((a, b) => b[0].period.localeCompare(a[0].period) || String(a[0].material).localeCompare(String(b[0].material)))
+    .slice(0, 12);
+}
+
+function showAnswer(lookup) {
+  const box = document.getElementById("answer");
+  if (!lookup.answerable) {
+    box.innerHTML = `<div class="answer refused"><p>This data can't answer that. ${escape(lookup.reason || "")}</p>` +
+      `<p class="note">Try the search table under "Browse the numbers", or ask about a company, country or price that is listed there.</p></div>`;
+    return;
+  }
+  const groups = answerFrom(lookup);
+  if (!groups.length) {
+    box.innerHTML = `<div class="answer refused"><div class="looked-up">Looked up ${escape(describe(lookup))}</div><p>No number in the data matches.</p></div>`;
+    return;
+  }
+  box.innerHTML = `<div class="answer"><div class="looked-up">Looked up ${escape(describe(lookup))}</div>` + groups.map(g => {
+    const r = g[0];
+    const label = [r.period, MATERIAL_WORDS[r.material] ?? r.material, r.segment].filter(Boolean).join(", ");
+    const others = g.slice(1).map(o => `${escape(o.source_document)} p.${o.printed_page ?? "?"} (“${escape(o.raw_text)}”)`);
+    return `<div class="figure">${escape(label)}: ${number(r.value_base, 2)} ${escape(r.unit.replaceAll("_", " "))}</div>` +
+      `<div class="cite">${escape(r.source_document)}, page ${r.printed_page ?? "not printed"}, printed as <span class="raw">“${escape(r.raw_text)}”</span>` +
+      (r.notes ? `. ${escape(r.notes)}` : "") + (others.length ? `<br>Also printed in: ${others.join("; ")}` : "") + `</div>`;
+  }).join("") + `</div>`;
+}
+
+async function ask(question) {
+  const box = document.getElementById("answer"), button = document.getElementById("ask-button");
+  if (!question.trim()) return;
+  button.disabled = true;
+  box.innerHTML = `<p class="note">Looking it up…</p>`;
+  try {
+    const response = await fetch(ASK_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }) });
+    const lookup = await response.json();
+    if (!response.ok || lookup.error) throw new Error(lookup.error || "unavailable");
+    await numbersReady;
+    showAnswer(lookup);
+  } catch (error) {
+    box.innerHTML = `<div class="answer refused"><p>${escape(error.message === "unavailable" || error.name === "TypeError"
+      ? "The question box is unavailable right now (its free daily allowance may be used up). The search table below always works."
+      : error.message)}</p></div>`;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+if (ASK_URL) {
+  document.getElementById("ask-form").addEventListener("submit", e => { e.preventDefault(); ask(document.getElementById("question").value); });
+  document.querySelectorAll("#examples button").forEach(b => b.addEventListener("click", () => {
+    document.getElementById("question").value = b.textContent; ask(b.textContent); }));
+  fetch("data/chatbot_eval.json").then(r => r.ok ? r.json() : null).then(e => {
+    if (e) document.getElementById("ask-note").textContent =
+      `Measured on ${e.total} test questions with known answers: ${e.correct} right, including ${e.refused_correctly} of ${e.should_refuse} that must be refused (${e.model.split("/").pop()}, ${e.date}).`;
+  }).catch(() => {});
+} else {
+  document.getElementById("question").disabled = document.getElementById("ask-button").disabled = true;
+  document.querySelectorAll("#examples button").forEach(b => b.disabled = true);
+  document.getElementById("ask-note").textContent = "The question box is being set up.";
+}
+
 // Browse: filter all numbers in the browser; show 25 at first, 100 more per click.
 let shown = 25;
 let rows = [];
@@ -274,7 +398,7 @@ function render() {
   document.getElementById("more").hidden = matching.length <= shown;
 }
 
-fetch("data/numbers.json").then(r => r.json()).then(data => {
+numbersReady = fetch("data/numbers.json").then(r => r.json()).then(data => {
   rows = data.map(r => ({ ...r, _text: Object.values(r).join(" ").toLowerCase() }));
   const fill = (id, values) => document.getElementById(id).insertAdjacentHTML("beforeend",
     [...new Set(values)].sort().map(v => `<option>${escape(v)}</option>`).join(""));

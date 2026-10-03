@@ -3,6 +3,8 @@
 #   docs/data/numbers.json          every number, with its document, page and printed text
 #   docs/data/site.json             headline counts, MP vs USGS, Neo by segment, open questions
 #   docs/data/rare_earth_intel.csv  every number, for download
+#   docs/data/vocabulary.json       what can be asked about: every who, what, material, part and year that
+#                                   exists in the data (the question box may only choose from this list)
 import glob
 import json
 import os
@@ -51,6 +53,32 @@ def neo_by_segment(rows, period="FY2025"):
     return sorted(table, key=lambda r: r["per_tonne"])
 
 
+# What each metric means, in words a question would use (for the question box's language model).
+METRIC_WORDS = {
+    "production_volume": "tonnes produced (mine production for countries; output for companies)",
+    "sales_volume": "tonnes sold",
+    "revenue": "revenue / sales in money",
+    "avg_selling_price": "the company's stated average selling (realized) price",
+    "market_price": "USGS average market price of an oxide, US dollars per kg",
+    "cash_receipts": "cash received from customers (not revenue)",
+    "composition_pct": "share of each element in the concentrate, percent",
+    "intersegment_elimination": "eliminations between segments",
+    "non_revenue_income": "income booked outside revenue (MP's price protection agreement)",
+}
+
+
+def vocabulary(rows):
+    # For each who and what: the materials, parts (segments) and years that exist, so a question can only
+    # be turned into a lookup of something that is really in the data.
+    entries = []
+    for (entity, metric), part in rows.groupby(["entity", "metric"]):
+        entries.append({"entity": entity, "metric": metric, "metric_means": METRIC_WORDS.get(metric, metric),
+                        "materials": sorted(part["material"].dropna().unique().tolist()),
+                        "segments": sorted(part["segment"].dropna().unique().tolist()),
+                        "years": sorted(part["period"].dropna().unique().tolist())})
+    return entries
+
+
 def explanations(checks, status):
     # Each recorded reason once, with how many check lines it covers.
     picked = checks[checks["status"] == status]
@@ -80,6 +108,8 @@ def main():
     }
     with open(f"{OUT}/site.json", "w") as f:
         json.dump(site, f, indent=1)
+    with open(f"{OUT}/vocabulary.json", "w") as f:
+        json.dump(vocabulary(rows), f, indent=1)
     print(f"{len(rows)} numbers from {site['documents']} documents and {len(checks)} checks -> {OUT}/")
 
 

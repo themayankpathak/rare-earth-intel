@@ -1,0 +1,567 @@
+[
+ {
+  "entity": "Australia",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Brazil",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Burma",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "China",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "India",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "metric": "avg_selling_price",
+  "metric_means": "the company's stated average selling (realized) price",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026"
+  ]
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "metric": "cash_receipts",
+  "metric_means": "cash received from customers (not revenue)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026"
+  ]
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "NdPr",
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026"
+  ]
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "metric": "revenue",
+  "metric_means": "revenue / sales in money",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2013",
+   "FY2014",
+   "FY2015",
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026"
+  ]
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "metric": "sales_volume",
+  "metric_means": "tonnes sold",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025",
+   "FY2026"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "avg_selling_price",
+  "metric_means": "the company's stated average selling (realized) price",
+  "materials": [
+   "NdPr",
+   "total_REO"
+  ],
+  "segments": [
+   "Materials"
+  ],
+  "years": [
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "composition_pct",
+  "metric_means": "share of each element in the concentrate, percent",
+  "materials": [
+   "Ce",
+   "La",
+   "Nd",
+   "NdPr",
+   "Pr",
+   "SEG+"
+  ],
+  "segments": [],
+  "years": [
+   "not_applicable"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "intersegment_elimination",
+  "metric_means": "eliminations between segments",
+  "materials": [
+   "NdPr"
+  ],
+  "segments": [],
+  "years": [
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "non_revenue_income",
+  "metric_means": "income booked outside revenue (MP's price protection agreement)",
+  "materials": [
+   "NdPr"
+  ],
+  "segments": [
+   "Materials"
+  ],
+  "years": [
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "NdPr",
+   "total_REO"
+  ],
+  "segments": [
+   "Materials"
+  ],
+  "years": [
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "revenue",
+  "metric_means": "revenue / sales in money",
+  "materials": [
+   "NdPr",
+   "not_applicable",
+   "total_REO"
+  ],
+  "segments": [
+   "Magnetics",
+   "Materials"
+  ],
+  "years": [
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "MP Materials",
+  "metric": "sales_volume",
+  "metric_means": "tonnes sold",
+  "materials": [
+   "NdPr",
+   "total_REO"
+  ],
+  "segments": [
+   "Materials"
+  ],
+  "years": [
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Madagascar",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Malaysia",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Neo Performance Materials",
+  "metric": "intersegment_elimination",
+  "metric_means": "eliminations between segments",
+  "materials": [
+   "not_applicable"
+  ],
+  "segments": [],
+  "years": [
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Neo Performance Materials",
+  "metric": "revenue",
+  "metric_means": "revenue / sales in money",
+  "materials": [
+   "not_applicable"
+  ],
+  "segments": [
+   "C&O",
+   "Magnequench",
+   "Rare Metals"
+  ],
+  "years": [
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Neo Performance Materials",
+  "metric": "sales_volume",
+  "metric_means": "tonnes sold",
+  "materials": [
+   "not_applicable"
+  ],
+  "segments": [
+   "C&O",
+   "Magnequench",
+   "Rare Metals"
+  ],
+  "years": [
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "metric": "market_price",
+  "metric_means": "USGS average market price of an oxide, US dollars per kg",
+  "materials": [
+   "Dy",
+   "Nd",
+   "NdPr",
+   "Tb"
+  ],
+  "segments": [],
+  "years": [
+   "FY2014",
+   "FY2015",
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Russia",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Thailand",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "United States",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2014",
+   "FY2015",
+   "FY2016",
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "Vietnam",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ },
+ {
+  "entity": "World",
+  "metric": "production_volume",
+  "metric_means": "tonnes produced (mine production for countries; output for companies)",
+  "materials": [
+   "total_REO"
+  ],
+  "segments": [],
+  "years": [
+   "FY2017",
+   "FY2018",
+   "FY2019",
+   "FY2020",
+   "FY2021",
+   "FY2022",
+   "FY2023",
+   "FY2024",
+   "FY2025"
+  ]
+ }
+]
