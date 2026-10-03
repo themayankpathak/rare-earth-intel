@@ -1,9 +1,11 @@
-// Rare Earth Intel question box: a Cloudflare Worker.
+// Rare Earth Intel question box: a Cloudflare Worker with two jobs.
 //
-// It receives a question from the website, asks a language model to turn it into a LOOKUP (who, what,
-// material, part, year), checks every value against the list of what exists in the data, and sends the
-// lookup back. The website then finds the numbers itself and shows them with document and page.
-// The model never writes a number and never does arithmetic.
+// 1. LOOKUP: turn a question into a lookup (who, what, material, part, year); every value is checked against
+//    the list of what exists in the data, anything else is refused. The website then finds the numbers itself.
+// 2. WRITE: turn the facts the website found (numbers, trend, revisions, notes, checks) into a short answer.
+//    A number guard then checks that every number in the model's text appears in those facts; if one does
+//    not, the text is thrown away and the website shows its plain answer instead.
+// The model never supplies a number of its own and never does arithmetic.
 //
 // Setup (Cloudflare dashboard): paste this file into a Worker, add a Workers AI binding named AI, deploy.
 
@@ -18,6 +20,7 @@ const VOCABULARY_URL = "https://themayankpathak.github.io/rare-earth-intel/data/
 const ALLOWED_ORIGINS = ["https://themayankpathak.github.io", "http://localhost:8000"];
 
 const MAX_QUESTION_LENGTH = 300;
+const MAX_FACTS_LENGTH = 8000;
 
 let vocabularyCache = null;
 
@@ -76,6 +79,34 @@ export function validate(lookup, entries) {
   return { answerable: true, entity: entry.entity, metric: entry.metric, material, segment, year };
 }
 
+export function writingInstructions() {
+  // The model's instructions for writing the answer from the facts the website found.
+  return [
+    "You write a short answer to a question about rare earth data, using ONLY the facts given as JSON.",
+    "Rules:",
+    "- 2 to 4 plain sentences, under 90 words. No lists, no headings, no markdown.",
+    "- Start with the direct answer: the figure, its unit, the year, and the document it comes from.",
+    "- Then add the most useful context from the facts: the trend over nearby years, a revision between documents",
+    "  (say when an earlier figure was an estimate), a note, or an open question.",
+    "- Copy every number exactly as it is written in the facts. Do not round, convert or recalculate.",
+    "- Never calculate anything: no percentages, differences, totals, averages or growth rates.",
+    "- Write counts in words (two editions, three reports), never as digits.",
+    "- If the facts do not say something, do not say it.",
+  ].join("\n");
+}
+
+export function numbersIn(text) {
+  // Every number written in a text, as plain values: "41,992,000" -> 41992000, "$4.7/kg" -> 4.7.
+  return (String(text).match(/\d[\d,]*(?:\.\d+)?/g) || []).map(n => Number(n.replace(/,/g, "")));
+}
+
+export function guard(text, facts) {
+  // True if every number in the model's text also appears somewhere in the facts it was given.
+  const allowed = new Set(numbersIn(JSON.stringify(facts)));
+  const unknown = numbersIn(text).filter(n => !allowed.has(n));
+  return { ok: unknown.length === 0, unknown };
+}
+
 function reply(body, status, origin) {
   // A 204 reply (the answer to the browser's "may I?" preflight check) must have no body at all.
   return new Response(status === 204 ? null : JSON.stringify(body), {
@@ -97,11 +128,33 @@ export default {
     if (request.method !== "POST") return reply({ error: "Send a POST request with a question." }, 405, allowed);
     if (!ALLOWED_ORIGINS.includes(origin)) return reply({ error: "This question box only answers the Rare Earth Intel website." }, 403, allowed);
 
-    let question = "";
-    try { question = String((await request.json()).question || "").trim(); } catch { /* handled below */ }
+    let body = {};
+    try { body = await request.json(); } catch { /* handled below */ }
+    const question = String(body.question || "").trim();
     if (!question) return reply({ error: "Ask a question." }, 400, allowed);
     if (question.length > MAX_QUESTION_LENGTH) return reply({ error: `Keep the question under ${MAX_QUESTION_LENGTH} characters.` }, 400, allowed);
 
+    // Job 2: write the answer from the facts the website found, then check every number in it.
+    if (body.mode === "write") {
+      const facts = body.facts;
+      if (!facts || JSON.stringify(facts).length > MAX_FACTS_LENGTH) return reply({ error: "No facts to write from." }, 400, allowed);
+      try {
+        const result = await env.AI.run(MODEL, {
+          messages: [{ role: "system", content: writingInstructions() },
+                     { role: "user", content: `Question: ${question}\nFacts: ${JSON.stringify(facts)}` }],
+          max_tokens: 220,
+          temperature: 0,
+        });
+        const text = String(result.response ?? "").trim();
+        const check = guard(text, facts);
+        return reply(check.ok ? { text, verified: true, model: MODEL }
+                              : { verified: false, unknown: check.unknown.slice(0, 5), model: MODEL }, 200, allowed);
+      } catch (error) {
+        return reply({ error: "The question box is unavailable right now. The search table below always works." }, 503, allowed);
+      }
+    }
+
+    // Job 1: turn the question into a checked lookup.
     try {
       const entries = await vocabulary();
       const result = await env.AI.run(MODEL, {

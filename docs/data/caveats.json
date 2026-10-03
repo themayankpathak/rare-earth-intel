@@ -1,0 +1,394 @@
+[
+ {
+  "entity": "Lynas Rare Earths",
+  "year": "FY2017",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "OPEN",
+  "reason": "FY17 and FY18 stated prices are ~2% above revenue / volume (18.0 vs 17.58; 21.6 vs 21.17), in the FY2019, FY2020 and FY2021 reports. Lead, unconfirmed: the FY2019 report calls revenue 'net sales revenue', so the old price may be on gross sales. FY2017-18 reports not collected"
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "OPEN",
+  "reason": "FY17 and FY18 stated prices are ~2% above revenue / volume (18.0 vs 17.58; 21.6 vs 21.17), in the FY2019, FY2020 and FY2021 reports. Lead, unconfirmed: the FY2019 report calls revenue 'net sales revenue', so the old price may be on gross sales. FY2017-18 reports not collected"
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "OPEN",
+  "reason": "five-year table prices (two decimals) are about one cent off revenue / volume in FY2019 (18.97 vs 18.98) and FY2022 (60.27 vs 60.28); the one-decimal prices in the sales table reconcile. Cause not yet found"
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "year": "FY2022",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "OPEN",
+  "reason": "five-year table prices (two decimals) are about one cent off revenue / volume in FY2019 (18.97 vs 18.98) and FY2022 (60.27 vs 60.28); the one-decimal prices in the sales table reconcile. Cause not yet found"
+ },
+ {
+  "entity": "Lynas Rare Earths",
+  "year": "FY2025",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "OPEN",
+  "reason": "FY25 stated A$50.6/kg vs revenue / volume A$50.73/kg, in both the FY2025 and FY2026 reports; would need revenue A$1.35m lower than printed. Not explained by the revenue note (FY2025 report printed p.78): revenue from contracts A$542.7m gives 49.47, total revenue A$556.5m gives 50.73"
+ },
+ {
+  "entity": "MP Materials",
+  "year": "FY2021",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "EXPECTED",
+  "reason": "Realized Price for FY2019-FY2021 uses non-GAAP Total Value Realized, not GAAP revenue - FY2021 10-K printed p.34 (definition) and p.45 (reconciliation)"
+ },
+ {
+  "entity": "MP Materials",
+  "year": "FY2020",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "EXPECTED",
+  "reason": "Realized Price for FY2019-FY2021 uses non-GAAP Total Value Realized, not GAAP revenue - FY2021 10-K printed p.34 (definition) and p.45 (reconciliation)"
+ },
+ {
+  "entity": "MP Materials",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "avg_selling_price",
+  "status": "EXPECTED",
+  "reason": "Realized Price for FY2019-FY2021 uses non-GAAP Total Value Realized, not GAAP revenue - FY2021 10-K printed p.34 (definition) and p.45 (reconciliation)"
+ },
+ {
+  "entity": "Australia",
+  "year": "FY2020",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Australia",
+  "year": "FY2021",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Australia",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Australia",
+  "year": "FY2024",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Brazil",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Brazil",
+  "year": "FY2024",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Burma",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Burma",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Burma",
+  "year": "FY2021",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Burma",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Burma",
+  "year": "FY2024",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "China",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "India",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "MP Materials",
+  "year": "not_applicable",
+  "material": "Ce",
+  "metric": "composition_pct",
+  "status": "EXPECTED",
+  "reason": "estimated element distribution revised between the FY2020 10-K (printed p.13) and the FY2021 10-K (printed p.26)"
+ },
+ {
+  "entity": "MP Materials",
+  "year": "not_applicable",
+  "material": "La",
+  "metric": "composition_pct",
+  "status": "EXPECTED",
+  "reason": "estimated element distribution revised between the FY2020 10-K (printed p.13) and the FY2021 10-K (printed p.26)"
+ },
+ {
+  "entity": "Madagascar",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Madagascar",
+  "year": "FY2020",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Madagascar",
+  "year": "FY2021",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Madagascar",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Madagascar",
+  "year": "FY2024",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Malaysia",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2020",
+  "material": "Dy",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2022",
+  "material": "Dy",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2023",
+  "material": "Dy",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2020",
+  "material": "Nd",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2021",
+  "material": "Nd",
+  "metric": "market_price",
+  "status": "OPEN",
+  "reason": "2021 neodymium oxide price is $49/kg in the 2022 and 2023 editions and $98/kg from the 2024 edition on; 2020 is unchanged. The price source footnote changed at the same time (Argus Metals International -> Argus Non-Ferrous Metals), but that alone does not explain one restated year"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2018",
+  "material": "Tb",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Rare earth market (USGS)",
+  "year": "FY2020",
+  "material": "Tb",
+  "metric": "market_price",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Thailand",
+  "year": "FY2020",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Thailand",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Thailand",
+  "year": "FY2024",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "United States",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "United States",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "United States",
+  "year": "FY2021",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "United States",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Vietnam",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Vietnam",
+  "year": "FY2019",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Vietnam",
+  "year": "FY2022",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "Vietnam",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "World",
+  "year": "FY2018",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ },
+ {
+  "entity": "World",
+  "year": "FY2023",
+  "material": "total_REO",
+  "metric": "production_volume",
+  "status": "EXPECTED",
+  "reason": "an earlier edition's estimate (e) was revised in a later edition"
+ }
+]

@@ -301,3 +301,26 @@ open models can still run on Cloudflare). The model choice is a measurement: cha
 20 questions.
 
 **Next:** Owner creates the Cloudflare Worker, adds the AI binding, sets ASK_URL, runs the evaluation, pushes.
+
+## 2026-10-03 — Day 13 (continued): v10 live, then v11, written answers
+
+**Did:** v10 went live: lookup accuracy 19/20 on the test questions, 5/5 refusals (one false refusal:
+Magnequench 2024 sales). Two go-live bugs: the Worker answered the browser's CORS preflight with a 204 that
+had a body (invalid, so every browser question failed; the evaluation script and the stand-in browser test
+never send a preflight), and a fix bundle's index.html overwrote the Worker address. Both fixed; a test now
+checks the preflight reply. Owner found the answers underwhelming (a template, no context), so v11 adds
+written answers: the page gathers facts by code (figures with document and page, trend over nearby years,
+revisions between documents with estimate flags, explained or open checks from the new
+docs/data/caveats.json), the model writes 2-4 sentences from those facts only, and a number guard in the
+Worker rejects the text if any number in it is not in the facts. Cited figures show at once; the text
+appears above them when verified; "How this answer was made" explains the three steps.
+
+**Result:** 67 tests pass (6 new Worker tests via Node: guard accepts faithful text, rejects a calculated
+percentage, an invented figure and a wrong figure; invented company refused; preflight 204 without a body).
+Browser test with a stand-in Worker and the real guard: verified answer renders; an invented 37% is withheld.
+
+**Found:** The guard caught a wrong number in my own stand-in text (2023 neodymium price typed as 74 from
+memory; the data says 78). Limit stated honestly: the guard proves every number is from the data, not that
+each is attached to the right year, so the cited figures stay under the text.
+
+**Next:** Owner pastes the new worker.js into Cloudflare and deploys; check real write-ups on the live site.

@@ -7,7 +7,7 @@ into a structured table where every number keeps its meaning, measures its own a
 checked answers, and catches the mistakes that make naive price calculations wrong.
 
 **Status:** v10, October 2026. Three companies and one government source, twenty-six documents, one label
-map per source, 61 unit tests run on every push, and a website with a question box: **[themayankpathak.github.io/rare-earth-intel](https://themayankpathak.github.io/rare-earth-intel/)**
+map per source, 67 unit tests run on every push, and a website with a question box: **[themayankpathak.github.io/rare-earth-intel](https://themayankpathak.github.io/rare-earth-intel/)**
 
 | Source | What it is | Documents | Years covered |
 |---|---|---|---|
@@ -151,7 +151,12 @@ Everything company-specific is configuration, not code:
    accepts the lookup only if every value exists in the data (`docs/data/vocabulary.json`) and refuses
    everything else: forecasts, advice, companies or metrics or years not in the data. The page then finds
    the figures itself and shows each with its document, page and printed text, plus every other place the
-   same figure is printed. It is measured on 20 questions with known answers, five of which must be refused
+   same figure is printed. Then the model writes a short answer from those figures only (the trend over
+   nearby years, revisions between documents, notes, open questions), and a **number guard** checks that
+   every number in its text appears in the figures it was given; if one does not, the text is withheld and
+   only the cited figures are shown. The guard proves every number came from the data; it cannot prove each
+   is attached to the right year, which is why the cited figures always appear under the text.
+   The lookup step is measured on 20 questions with known answers, five of which must be refused
    ([`eval/chatbot_questions.csv`](eval/chatbot_questions.csv), [`scripts/evaluate_chatbot.py`](scripts/evaluate_chatbot.py));
    the score is shown on the website.
 

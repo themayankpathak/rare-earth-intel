@@ -3,6 +3,8 @@
 #   docs/data/numbers.json          every number, with its document, page and printed text
 #   docs/data/site.json             headline counts, MP vs USGS, Neo by segment, open questions
 #   docs/data/rare_earth_intel.csv  every number, for download
+#   docs/data/caveats.json          each explained or open check, tied to the numbers it concerns (who, what,
+#                                   material, year), so the question box can mention it
 #   docs/data/vocabulary.json       what can be asked about: every who, what, material, part and year that
 #                                   exists in the data (the question box may only choose from this list)
 import glob
@@ -79,6 +81,29 @@ def vocabulary(rows):
     return entries
 
 
+def caveats(checks, rows):
+    # Each EXPECTED or OPEN check, tied to the numbers it concerns, for the question box's answers.
+    # "Same number" checks name who, year, material and what; price checks name year and material, and the
+    # document's source tells who. Checks that passed are not caveats.
+    entities = sorted(rows["entity"].unique(), key=len, reverse=True)
+    sources = pd.read_csv("config/companies.csv", dtype=str)
+    found = []
+    for _, c in checks[checks["status"].isin(["EXPECTED", "OPEN"])].iterrows():
+        words = c["check"].split(":")[0].split()
+        if c["section"] == "Same number, every place it is printed":
+            entity = next((e for e in entities if c["check"].startswith(e + " ")), None)
+            if entity:
+                rest = c["check"][len(entity) + 1:].split(":")[0].split()
+                found.append({"entity": entity, "year": rest[0], "material": rest[-2], "metric": rest[-1],
+                              "status": c["status"], "reason": c["reason"]})
+        elif len(words) >= 3 and words[2] == "price":
+            source = next((s for _, s in sources.iterrows() if c["section"].startswith(s["file_prefix"] + "_")), None)
+            if source is not None:
+                found.append({"entity": source["entity"], "year": words[0], "material": words[1],
+                              "metric": "avg_selling_price", "status": c["status"], "reason": c["reason"]})
+    return pd.DataFrame(found).drop_duplicates().to_dict(orient="records")
+
+
 def explanations(checks, status):
     # Each recorded reason once, with how many check lines it covers.
     picked = checks[checks["status"] == status]
@@ -110,6 +135,8 @@ def main():
         json.dump(site, f, indent=1)
     with open(f"{OUT}/vocabulary.json", "w") as f:
         json.dump(vocabulary(rows), f, indent=1)
+    with open(f"{OUT}/caveats.json", "w") as f:
+        json.dump(caveats(checks, rows), f, indent=1)
     print(f"{len(rows)} numbers from {site['documents']} documents and {len(checks)} checks -> {OUT}/")
 
 

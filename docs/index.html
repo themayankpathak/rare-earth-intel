@@ -119,6 +119,12 @@
   .answer .cite { font-size: 0.9rem; color: var(--muted); margin: 0.15rem 0 0.7rem; }
   .answer .cite .raw { color: var(--ink); }
   .answer ul { padding-left: 1.1rem; margin: 0.3rem 0 0.7rem; }
+  .answer .summary { font-size: 1.05rem; margin: 0 0 0.9rem; }
+  .answer .summary.pending { color: var(--muted); font-style: italic; }
+  .answer .sources-heading { font-size: 0.82rem; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin: 0.4rem 0 0.4rem; }
+  .answer details { margin-top: 0.6rem; font-size: 0.9rem; color: var(--muted); }
+  .answer details summary { cursor: pointer; color: var(--nd); }
+  .answer details ol { margin: 0.5rem 0 0; padding-left: 1.2rem; }
 
   footer { max-width: 64rem; margin: 0 auto; padding: 2rem 1.25rem 3rem; border-top: 1px solid var(--rule); font-size: 0.92rem; color: var(--muted); }
 
@@ -291,6 +297,10 @@ const ASK_URL = "https://rare-earth-intel-ask.im-promptu-mayank.workers.dev/";
 const MATERIAL_WORDS = { total_REO: "all rare earths", NdPr: "NdPr", Nd: "neodymium", Pr: "praseodymium", Dy: "dysprosium",
   Tb: "terbium", Ce: "cerium", La: "lanthanum", "SEG+": "SEG+", not_applicable: "" };
 let numbersReady;   // resolves when numbers.json is loaded (the answers are looked up in it)
+let caveats = [];   // explained and open checks, tied to the numbers they concern (data/caveats.json)
+const caveatsReady = fetch("data/caveats.json").then(r => r.ok ? r.json() : []).then(c => { caveats = c; }).catch(() => {});
+const unitWords = u => String(u ?? "").replaceAll("_", " ");
+const pageOf = r => r.printed_page != null ? `page ${r.printed_page}` : "no page number";
 
 function describe(lookup) {
   // What was looked up, in words: who, what, and any material, part and year.
@@ -319,26 +329,90 @@ function answerFrom(lookup) {
     .slice(0, 12);
 }
 
+function kindOf(r) {
+  // What kind of figure, without the year: "neodymium", "all rare earths, Materials".
+  return [MATERIAL_WORDS[r.material] ?? r.material, r.segment].filter(Boolean).join(", ") || r.metric.replaceAll("_", " ");
+}
+
+function labelOf(r) {
+  return [r.period, MATERIAL_WORDS[r.material] ?? r.material, r.segment].filter(Boolean).join(", ");
+}
+
+function factsFor(lookup, groups) {
+  // Everything the write-up may use, gathered by code from the table: the figures found, the trend over
+  // nearby years, revisions between documents, and explained or open checks. The model may only use these.
+  const shown = groups.slice(0, 6);
+  const answer = shown.map(g => { const r = g[0]; return { year: r.period, what: kindOf(r), value: number(r.value_base, 2),
+    unit: unitWords(r.unit), document: r.source_document, page: r.printed_page ?? "not printed", note: r.notes || undefined }; });
+  let trend = [];
+  if (lookup.year && shown.length) {
+    const r = shown[0][0], asked = Number(lookup.year.slice(2));
+    const series = rows.filter(o => o.entity === r.entity && o.metric === r.metric && o.material === r.material &&
+      (o.segment ?? "") === (r.segment ?? "") && Math.abs(Number(o.period.slice(2)) - asked) <= 3 && o.period !== r.period);
+    const latest = new Map();
+    for (const o of series.sort((a, b) => a.source_document.localeCompare(b.source_document))) latest.set(o.period, o);
+    trend = [...latest.values()].sort((a, b) => a.period.localeCompare(b.period))
+      .map(o => ({ year: o.period, value: number(o.value_base, 2), unit: unitWords(o.unit) }));
+  }
+  const revisions = shown.filter(g => new Set(g.map(o => o.value_base)).size > 1).slice(0, 4).map(g => ({
+    year: g[0].period, what: kindOf(g[0]),
+    versions: g.map(o => ({ document: o.source_document, value: number(o.value_base, 2),
+      estimate: String(o.notes || "").includes("Estimate") })) }));
+  const years = new Set([...answer.map(a => a.year), ...trend.map(t => t.year)]);
+  const materials = new Set(shown.map(g => g[0].material));
+  const related = caveats.filter(c => c.entity === lookup.entity && c.metric === lookup.metric &&
+    years.has(c.year) && materials.has(c.material)).slice(0, 3).map(c => ({ year: c.year, status: c.status, reason: c.reason.slice(0, 300) }));
+  return { answer, trend, revisions, checks: related };
+}
+
 function showAnswer(lookup) {
+  // Show the cited figures at once; the written summary is added above them when it arrives.
   const box = document.getElementById("answer");
   if (!lookup.answerable) {
     box.innerHTML = `<div class="answer refused"><p>This data can't answer that. ${escape(lookup.reason || "")}</p>` +
       `<p class="note">Try the search table under "Browse the numbers", or ask about a company, country or price that is listed there.</p></div>`;
-    return;
+    return null;
   }
   const groups = answerFrom(lookup);
   if (!groups.length) {
     box.innerHTML = `<div class="answer refused"><div class="looked-up">Looked up ${escape(describe(lookup))}</div><p>No number in the data matches.</p></div>`;
-    return;
+    return null;
   }
-  box.innerHTML = `<div class="answer"><div class="looked-up">Looked up ${escape(describe(lookup))}</div>` + groups.map(g => {
+  box.innerHTML = `<div class="answer"><div class="looked-up">Looked up ${escape(describe(lookup))}</div>` +
+    `<p class="summary pending" id="summary">Writing a short answer from these figures…</p>` +
+    `<div class="sources-heading">The figures, with their sources</div>` + groups.map(g => {
     const r = g[0];
-    const label = [r.period, MATERIAL_WORDS[r.material] ?? r.material, r.segment].filter(Boolean).join(", ");
-    const others = g.slice(1).map(o => `${escape(o.source_document)} p.${o.printed_page ?? "?"} (“${escape(o.raw_text)}”)`);
-    return `<div class="figure">${escape(label)}: ${number(r.value_base, 2)} ${escape(r.unit.replaceAll("_", " "))}</div>` +
-      `<div class="cite">${escape(r.source_document)}, page ${r.printed_page ?? "not printed"}, printed as <span class="raw">“${escape(r.raw_text)}”</span>` +
+    const others = g.slice(1).map(o => `${escape(o.source_document)}, ${pageOf(o)} (“${escape(o.raw_text)}”)`);
+    return `<div class="figure">${escape(labelOf(r))}: ${number(r.value_base, 2)} ${escape(unitWords(r.unit))}</div>` +
+      `<div class="cite">${escape(r.source_document)}, ${pageOf(r)}, printed as <span class="raw">“${escape(r.raw_text)}”</span>` +
       (r.notes ? `. ${escape(r.notes)}` : "") + (others.length ? `<br>Also printed in: ${others.join("; ")}` : "") + `</div>`;
-  }).join("") + `</div>`;
+  }).join("") + `<details id="how"><summary>How this answer was made</summary><ol>` +
+    `<li>A language model turned your question into a lookup (${escape(describe(lookup))}). Every value was checked against the list of what exists in the data.</li>` +
+    `<li>The page found ${groups.length} figure${groups.length === 1 ? "" : "s"} in the table, shown with their documents and pages.</li>` +
+    `<li id="how-write">The model is writing a summary from those figures only.</li></ol></details></div>`;
+  return groups;
+}
+
+async function writeSummary(question, lookup, groups) {
+  // Ask the model to write the answer from the facts; show it only if every number in it is in the facts.
+  const summary = document.getElementById("summary"), how = document.getElementById("how-write");
+  try {
+    const response = await fetch(ASK_URL, { method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, mode: "write", facts: factsFor(lookup, groups) }) });
+    const written = await response.json();
+    if (response.ok && written.verified) {
+      summary.textContent = written.text;
+      summary.classList.remove("pending");
+      how.textContent = "The model wrote the summary from those figures only, and code checked that every number in it appears in them.";
+    } else {
+      summary.remove();
+      how.textContent = "The model's summary was withheld: it contained a number that is not in the figures found" +
+        (written.unknown?.length ? ` (${written.unknown.join(", ")})` : "") + ". The figures below are shown as they are.";
+    }
+  } catch (error) {
+    summary.remove();
+    how.textContent = "The summary could not be written right now; the figures below are shown as they are.";
+  }
 }
 
 async function ask(question) {
@@ -351,8 +425,9 @@ async function ask(question) {
       body: JSON.stringify({ question }) });
     const lookup = await response.json();
     if (!response.ok || lookup.error) throw new Error(lookup.error || "unavailable");
-    await numbersReady;
-    showAnswer(lookup);
+    await Promise.all([numbersReady, caveatsReady]);
+    const groups = showAnswer(lookup);
+    if (groups) await writeSummary(question, lookup, groups);
   } catch (error) {
     box.innerHTML = `<div class="answer refused"><p>${escape(error.name === "TypeError"
       ? "The question box could not be reached. The search table below always works."
