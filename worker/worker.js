@@ -77,7 +77,8 @@ export function validate(lookup, entries) {
 }
 
 function reply(body, status, origin) {
-  return new Response(JSON.stringify(body), {
+  // A 204 reply (the answer to the browser's "may I?" preflight check) must have no body at all.
+  return new Response(status === 204 ? null : JSON.stringify(body), {
     status,
     headers: {
       "Content-Type": "application/json",
